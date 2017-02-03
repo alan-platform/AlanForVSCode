@@ -1,0 +1,26 @@
+{
+    "name": "alan",
+    "displayName": "alan",
+    "description": "",
+    "version": "0.0.1",
+    "publisher": "M-industries",
+    "engines": {
+        "vscode": "^1.5.0"
+    },
+    "categories": [
+        "Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "alan",
+            "aliases": ["Alan", "alan"],
+            "extensions": [".alan"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "alan",
+            "scopeName": "source.alan",
+            "path": "./syntaxes/alan.tmLanguage"
+        }]
+    }
+}
