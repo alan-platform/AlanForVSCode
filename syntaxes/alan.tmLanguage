@@ -7,6 +7,9 @@
 	<key>fileTypes</key>
 	<array>
 		<string>alan</string>
+		<string>control</string>
+		<string>grammar</string>
+		<string>schema</string>
 	</array>
 	<key>name</key>
 	<string>Alan</string>
