@@ -14,7 +14,12 @@
         "languages": [{
             "id": "alan",
             "aliases": ["Alan", "alan"],
-            "extensions": [".alan"],
+            "extensions": [
+                ".alan",
+                "control",
+                "grammar",
+                "schema"
+            ],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
