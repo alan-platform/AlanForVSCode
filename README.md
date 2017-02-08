@@ -14,16 +14,18 @@ This is an example with a problemMatcher compatible with the `--f-sublime` outpu
 
 ```json
 {
+    "version": "0.1.0",
+    "isShellCommand": true,
+    "showOutput": "always",
     "tasks": [
         {
-            "taskName": "Widget",
+            "taskName": "Widgets",
             "command": "bash",
             "args": [
                 "-c",
                 "grunt shell:controls shell:widgets --no-color"
             ],
             "isShellCommand": true,
-            "isBuildCommand": true,
             "showOutput": "always",
             "problemMatcher": {
                 "owner": "alan",
@@ -35,7 +37,48 @@ This is an example with a problemMatcher compatible with the `--f-sublime` outpu
                     "column": 3,
                     "severity": 4,
                     "message": 5
-                }                    
+                }
+            }
+        },
+        {
+            "taskName": "Fast",
+            "command": "bash",
+            "args": [
+                "-c",
+                "grunt build compile package --no-color"
+            ],
+            "isShellCommand": true,
+            "showOutput": "always",
+            "problemMatcher": {
+                "owner": "alan",
+                "fileLocation": ["absolute"],
+                "pattern": {
+                    "regexp": "(^.*alan):([0-9]+):([0-9]+):(error|warning): (.*)",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "taskName": "Language",
+            "command": "./dev/scripts/create-engine-version.sh",
+            "args": [ ],
+            "isShellCommand": true,
+            "showOutput": "always",
+            "problemMatcher": {
+                "owner": "alan",
+                "fileLocation": ["absolute"],
+                "pattern": {
+                    "regexp": "(^.*alan):([0-9]+):([0-9]+):(error|warning): (.*)",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
             }
         }
     ]
