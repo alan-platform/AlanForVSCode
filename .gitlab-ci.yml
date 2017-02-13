@@ -1,7 +1,7 @@
 before_script:
   - npm install
-  - npm install vsce
   - mkdir -p dist
+  - npm install vsce
 
 package:
   script:
