@@ -1,0 +1,11 @@
+before_script:
+  - npm install
+  - mkdir -p dist
+
+package:
+  script:
+    - vsce package --out dist/fabric-vscode.vsix
+    
+artifacts:
+  paths:
+    - dist/
