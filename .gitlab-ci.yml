@@ -5,7 +5,7 @@ before_script:
 
 package:
   script:
-    - vsce package --out dist/fabric-vscode.vsix
+    - node node_modules/vsce/out/vsce package --out dist/fabric-vscode.vsix
   artifacts:
     paths:
       - dist/
