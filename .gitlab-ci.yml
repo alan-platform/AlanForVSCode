@@ -1,6 +1,5 @@
 before_script:
   - npm install
-  - npm install vsce
 
 package:
   script:

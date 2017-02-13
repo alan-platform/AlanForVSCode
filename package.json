@@ -4,6 +4,10 @@
     "description": "",
     "version": "0.0.1",
     "publisher": "M-industries",
+    "repository": {
+        "type": "git",
+        "url": "https://gitlab.m-industries.com/alan-public/fabric-vscode-syntax"
+    },
     "engines": {
         "vscode": "^1.9.0"
     },
@@ -60,7 +64,8 @@
         "mocha": "^2.3.3",
         "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32",
-        "nak": "^0.3.3"
+        "nak": "^0.3.3",
+        "vsce": "^1.18.0"
     },
     "dependencies": {
         "nak": "^0.3.3"
