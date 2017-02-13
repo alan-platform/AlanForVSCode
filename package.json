@@ -48,10 +48,11 @@
         }]
     },
     "scripts": {
-        "vscode:prepublish": "node node_modules/typescript/bin/tsc -p ./",
+        "vscode:prepublish": "tsc -p ./",
         "compile": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "node ./node_modules/vscode/bin/test"
+        "test": "node ./node_modules/vscode/bin/test",
+        "package": "mkdir -p dist && vsce package --out dist/fabric-vscode.vsix"
     },
     "devDependencies": {
         "typescript": "^2.0.3",
