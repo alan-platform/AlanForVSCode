@@ -59,8 +59,7 @@
         "mocha": "^2.3.3",
         "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32",
-        "nak": "^0.3.3",
-        "vsce": "^1.18.0"
+        "nak": "^0.3.3"
     },
     "dependencies": {
         "nak": "^0.3.3"
