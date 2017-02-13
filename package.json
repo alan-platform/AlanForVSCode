@@ -1,12 +1,12 @@
 {
-    "name": "alan",
-    "displayName": "alan",
+    "name": "fabric",
+    "displayName": "Fabric",
     "description": "",
     "version": "0.0.1",
     "publisher": "M-industries",
     "repository": {
         "type": "git",
-        "url": "https://gitlab.m-industries.com/alan-public/fabric-vscode-syntax"
+        "url": "https://gitlab.m-industries.com/alan-public/fabric-for-vscode"
     },
     "engines": {
         "vscode": "^1.9.0"
