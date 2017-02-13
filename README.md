@@ -1,4 +1,6 @@
-# Fabric language package for VS Code
+# Fabric extension for VS Code
+
+This package provides syntax highlighting and goto/peek definition for Alan languages, and other tools for working with Fabric projects.
 
 ## Example task configuration
 
