@@ -5,12 +5,31 @@
     "version": "0.0.1",
     "publisher": "M-industries",
     "engines": {
-        "vscode": "^1.5.0"
+        "vscode": "^1.9.0"
     },
     "categories": [
         "Languages"
     ],
+    "activationEvents": [
+        "onLanguage:alan"
+    ],
+    "main": "./out/src/extension",
     "contributes": {
+        "commands": [
+            {
+                "command": "editor.gotoAlanDefinitions",
+                "title": "Go to Fuzzy Definitions"
+            }
+        ],
+        "configuration": {
+            "properties": {
+                "alan-definitions.integrateWithGoToDefinition": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Integrate with 'Go to Definition'"
+                }
+            }
+        },
         "languages": [{
             "id": "alan",
             "aliases": ["Alan", "alan"],
@@ -27,5 +46,22 @@
             "scopeName": "source.alan",
             "path": "./syntaxes/alan.tmLanguage"
         }]
+    },
+    "scripts": {
+        "vscode:prepublish": "tsc -p ./",
+        "compile": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "typescript": "^2.0.3",
+        "vscode": "^1.0.3",
+        "mocha": "^2.3.3",
+        "@types/node": "^6.0.40",
+        "@types/mocha": "^2.2.32",
+        "nak": "^0.3.3"
+    },
+    "dependencies": {
+        "nak": "^0.3.3"
     }
 }
