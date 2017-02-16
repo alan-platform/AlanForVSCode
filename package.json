@@ -69,8 +69,5 @@
     },
     "dependencies": {
         "nak": "^0.3.3"
-    },
-    "config": {
-        "unsafe-perm":true
     }
 }
