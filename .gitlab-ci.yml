@@ -1,9 +1,6 @@
-before_script:
-  - npm install --unsafe-perm
-
 package:
   script:
-    - npm run package
+    - npm install --unsafe-perm && npm run package
   artifacts:
     paths:
       - dist/
