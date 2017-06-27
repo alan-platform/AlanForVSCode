@@ -49,7 +49,15 @@
             "language": "alan",
             "scopeName": "source.alan",
             "path": "./syntaxes/alan.tmLanguage"
-        }]
+        }],
+        "views": {
+            "explorer": [
+                {
+                    "id": "alanTreeView",
+                    "name": "Alan Model"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",

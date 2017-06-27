@@ -5,17 +5,19 @@ import {extname, dirname, join} from 'path';
 import {exec} from 'child_process';
 import {fuzzyDefinitionSearch} from './search';
 
+import { AlanTreeViewDataProvider } from './providers/AlanTreeView'
+
 //This extension is based on Fuzzy Definitions from Johannes Rieken
 
 export function activate(context: vscode.ExtensionContext) {
 
     let config = vscode.workspace.getConfiguration('alan-definitions');
     let registrations: vscode.Disposable[] = [];
-    
+
     registrations.push(vscode.commands.registerTextEditorCommand('editor.gotoAlanDefinitions', editor => {
 
         let {document, selection} = editor;
-        
+
         return fuzzyDefinitionSearch(document, selection.active, new vscode.CancellationTokenSource().token).then(locations => {
 
             if (!locations || locations.length === 0) {
@@ -47,6 +49,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     context.subscriptions.push(...registrations);
+
+    context.subscriptions.push(vscode.window.registerTreeDataProvider("alanTreeView", new AlanTreeViewDataProvider(context)));
 }
 
 function openLocation(location: vscode.Location) {
