@@ -2,8 +2,8 @@ import * as vsc from "vscode";
 import * as path from "path";
 
 // based on DotJoshJohnson/vscode-alan
-export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<Node> {
-    private _onDidChangeTreeData: vsc.EventEmitter<Node | null> = new vsc.EventEmitter<Node | null>();
+export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
+    private _onDidChangeTreeData: vsc.EventEmitter<any | null> = new vsc.EventEmitter<any | null>();
     private _alanDocument: any;
 
     constructor(private _context: vsc.ExtensionContext) {
@@ -16,7 +16,7 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<Node> {
         });
     }
 
-    readonly onDidChangeTreeData: vsc.Event<Node | null> = this._onDidChangeTreeData.event;
+    readonly onDidChangeTreeData: vsc.Event<any | null> = this._onDidChangeTreeData.event;
 
     get activeEditor(): vsc.TextEditor | null {
         return vsc.window.activeTextEditor || null;
