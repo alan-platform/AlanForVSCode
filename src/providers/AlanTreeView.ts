@@ -22,7 +22,7 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
         return vsc.window.activeTextEditor || null;
     }
 
-    getChildren(element?: any): any[] {
+    getChildren(element?: any): vsc.ProviderResult<any> {
         if (!this._alanDocument) {
             this._refreshTree();
         }
@@ -32,7 +32,7 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
         }
 
         else if (this._alanDocument) {
-            return [this._alanDocument.lastChild];
+            return [this._alanDocument];
         }
 
         else {
