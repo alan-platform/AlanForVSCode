@@ -159,6 +159,8 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
             }
         });
 
+        this._alanDocument = res;
+
         this._onDidChangeTreeData.fire();
     }
 }
