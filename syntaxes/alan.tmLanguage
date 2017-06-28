@@ -182,7 +182,7 @@
 			<key>match</key>
 			<string>(?:\s|^)(text|stategroup|sparsematrix|reference|number|natural|matrix|integer|group|file|dictionary|densematrix|component|collection)(?=\s|//|:)</string>
 			<key>name</key>
-			<string>support.function.alan</string>
+			<string>entity.name.type</string>
 		</dict>
 		<key>steps</key>
 		<dict>
@@ -214,7 +214,7 @@
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>string.quoted.double.css</string>
+			<string>keyword.control</string>
 			<key>patterns</key>
 			<array>
 				<dict>
