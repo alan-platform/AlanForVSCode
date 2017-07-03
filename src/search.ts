@@ -64,14 +64,13 @@ function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.P
 function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
 
     return new Promise<vscode.Location[]>((resolve, reject) => {
-        console.log("WORD:A ");
 
         // let node = process.argv[0];
         let module = join(require.resolve('nak'), '../../bin/nak');
         // let word = document.getText(range);
 
         let tmpword = document.getText(new vscode.Range(new vscode.Position(pos.line, 0), pos));
-        
+
         let charpos = pos.character;
         while (charpos >= 0 && tmpword[charpos] != '\'') {
             charpos--;
@@ -87,7 +86,7 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
         if (word.length > 300) {
             return reject("No definition for this.");
         }
- 
+
         // let pattern = `\t${word}`;
         let pattern = `\t${word}`;
         let cmd = `node ${module} --ackmate -G "*${extname(document.fileName)}"  "${pattern}" ${vscode.workspace.rootPath}`;
@@ -100,7 +99,6 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
             let lines = stdout.split('\n');
             let lastUri: vscode.Uri;
             let lastMatch: RegExpMatchArray;
-            console.log("LENGTH ", lines.length);
             for (let line of lines) {
                 if (line[0] === ':') {
                     lastUri = vscode.Uri.file(line.substr(1));
