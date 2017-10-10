@@ -6,7 +6,7 @@
     "publisher": "M-industries",
     "repository": {
         "type": "git",
-        "url": "https://gitlab.m-industries.com/alan-public/fabric-for-vscode"
+        "url": "https://github.com/M-industries/FabricForVSCode.git"
     },
     "engines": {
         "vscode": "^1.13.0"
