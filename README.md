@@ -2,68 +2,23 @@
 
 This package provides syntax highlighting and goto/peek definition for Alan languages, and other tools for working with Alan projects.
 
-## Example task configuration
+## Build task
 
-Tasks are configured per project. Create a `.vscode` folder in the project root and add a `tasks.json` file. 
-
-This is an example with a problemMatcher compatible with the `--f-sublime` output of the alan project compiler.
+The `alan validate` command can be run via a task to highlight errors in your alan file. Tasks are configured per project. Create a `.vscode` folder in the project root and add a `tasks.json` file with the following content:
 
 ```json
 {
-    "version": "0.1.0",
-    "isShellCommand": true,
-    "showOutput": "always",
+    "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "Widgets",
-            "command": "bash",
-            "args": [
-                "-c",
-                "grunt shell:controls shell:widgets --no-color"
-            ],
-            "isShellCommand": true,
-            "showOutput": "always",
-            "problemMatcher": {
-                "owner": "alan",
-                "fileLocation": ["absolute"],
-                "pattern": {
-                    "regexp": "(^.*alan):([0-9]+):([0-9]+):(error|warning): (.*)",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3,
-                    "severity": 4,
-                    "message": 5
-                }
-            }
-        },
-        {
-            "taskName": "Fast",
-            "command": "bash",
-            "args": [
-                "-c",
-                "grunt build compile package --no-color"
-            ],
-            "isShellCommand": true,
-            "showOutput": "always",
-            "problemMatcher": {
-                "owner": "alan",
-                "fileLocation": ["absolute"],
-                "pattern": {
-                    "regexp": "(^.*alan):([0-9]+):([0-9]+):(error|warning): (.*)",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3,
-                    "severity": 4,
-                    "message": 5
-                }
-            }
-        },
-        {
-            "taskName": "Language",
-            "command": "./dev/scripts/create-engine-version.sh",
-            "args": [ ],
-            "isShellCommand": true,
-            "showOutput": "always",
+            "label": "Alan Validate",
+            "type": "shell",
+            "group": "build",
+            "command": "bash -c 'pushd ${fileDirname} && alan validate vscode --wire && popd'",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
             "problemMatcher": {
                 "owner": "alan",
                 "fileLocation": ["absolute"],
