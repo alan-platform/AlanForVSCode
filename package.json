@@ -1,12 +1,12 @@
 {
-    "name": "fabric",
-    "displayName": "Fabric",
+    "name": "alan",
+    "displayName": "Alan",
     "description": "",
     "version": "0.1.2",
     "publisher": "M-industries",
     "repository": {
         "type": "git",
-        "url": "https://github.com/M-industries/FabricForVSCode.git"
+        "url": "https://github.com/M-industries/AlanForVSCode.git"
     },
     "engines": {
         "vscode": "^1.13.0"
@@ -38,7 +38,7 @@
             "id": "alan",
             "aliases": ["Alan", "alan"],
             "extensions": [
-                ".alan",
+                "alan",
                 "control",
                 "grammar",
                 "schema"

@@ -1,6 +1,6 @@
-# Fabric extension for VS Code
+# Alan extension for VS Code
 
-This package provides syntax highlighting and goto/peek definition for Alan languages, and other tools for working with Fabric projects.
+This package provides syntax highlighting and goto/peek definition for Alan languages, and other tools for working with Alan projects.
 
 ## Example task configuration
 
