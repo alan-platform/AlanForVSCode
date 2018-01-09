@@ -34,22 +34,29 @@
                 }
             }
         },
-        "languages": [{
-            "id": "alan",
-            "aliases": ["Alan", "alan"],
-            "extensions": [
-                "alan",
-                "control",
-                "grammar",
-                "schema"
-            ],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "alan",
-            "scopeName": "source.alan",
-            "path": "./syntaxes/alan.tmLanguage"
-        }],
+        "languages": [
+            {
+                "id": "alan",
+                "aliases": [
+                    "Alan",
+                    "alan"
+                ],
+                "extensions": [
+                    "alan",
+                    "control",
+                    "grammar",
+                    "schema"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "alan",
+                "scopeName": "source.alan",
+                "path": "./syntaxes/alan.tmLanguage"
+            }
+        ],
         "views": {
             "explorer": [
                 {
