@@ -113,7 +113,7 @@
         <key>name</key>
         <string>storage.alan</string>
         <key>match</key>
-        <string>^\s*(windows|webservers|view|users|systems|system instances|settings|servers|root view|root|roles mapping|roles|reporting|query|providing connections|phrases|permissions|numerical types|linked node mapping|languages|keywords|interfaces mapping|interface|external systems|dynamic users|duplication mapping|component types|component rules)(?=\s|:|//)</string>
+        <string>^\s*(windows|webservers|view|users|systems|system instances|settings|servers|root view|root|roles mapping|roles|reporting|query|providing connections|phrases|permissions|numerical-types|numerical types|linked node mapping|languages|keywords|interfaces mapping|interface|external systems|dynamic users|duplication mapping|component types|component rules)(?=\s|:|//)</string>
       </dict>
       <dict>
         <key>name</key>
