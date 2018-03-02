@@ -8,30 +8,95 @@ The `alan validate` command can be run via a task to highlight errors in your al
 
 ```json
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Alan Validate",
-            "type": "shell",
-            "group": "build",
-            "command": "bash -c 'pushd ${fileDirname} && alan validate vscode --wire && popd'",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": {
-                "owner": "alan",
-                "fileLocation": ["absolute"],
-                "pattern": {
-                    "regexp": "(^.*alan):([0-9]+):([0-9]+):(error|warning): (.*)",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3,
-                    "severity": 4,
-                    "message": 5
-                }
-            }
-        }
-    ]
+	"version": "2.0.0",
+	"windows": {
+		"options": {
+			"shell": {
+				"executable": "C:\\Windows\\System32\\wsl.exe" // VSCode 64 bit
+				// "executable": "C:\\Windows\\sysnative\\bash.exe" // VSCode 32 bit
+			}
+		}
+	},
+	"tasks": [
+		{
+			"label": "Alan validate",
+			"type": "shell",
+			"options": {
+				"cwd": "${fileDirname}"
+			},
+			"windows": {
+				"command": "bash -ci \"alan validate vscode --wire 2>&1 | sed -e 's@^/mnt/\\([a-z]\\)@\\1:@g'\""
+			},
+			"command": "alan validate vscode --wire",
+			"problemMatcher": "$alanc",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared"
+			}
+        },
+		{
+			"label": "Alan validate - no wiring",
+			"type": "shell",
+			"options": {
+				"cwd": "${fileDirname}"
+			},
+			"windows": {
+				"command": "bash -ci \"alan validate vscode 2>&1 | sed -e 's@^/mnt/\\([a-z]\\)@\\1:@g'\""
+			},
+			"command": "alan validate vscode",
+			"problemMatcher": "$alanc",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Alan build all",
+			"type": "shell",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"windows": {
+				"command": "bash -ci \"alan build vscode 2>&1 | sed -e 's@^/mnt/\\([a-z]\\)@\\1:@g'\""
+			},
+			"command": "alan build vscode",
+			"problemMatcher": "$alanc",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Alan fetch",
+			"type": "shell",
+			"windows": {
+				"command": "bash -ci \"alan fetch\""
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"command": "alan fetch",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared"
+			}
+		}
+	]
 }
 ```
