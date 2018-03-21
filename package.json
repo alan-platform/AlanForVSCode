@@ -82,6 +82,25 @@
                         "message": 5
                     }
                 ]
+            },
+            {
+                "name": "alanc2",
+                "owner": "alan",
+                "fileLocation": [
+                    "absolute"
+                ],
+                "pattern": [
+                    {
+                        "regexp": "(^.*alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3,
+                        "endLine": 4,
+                        "endColumn": 5,
+                        "severity": 6,
+                        "message": 7
+                    }
+                ]
             }
         ]
     },
