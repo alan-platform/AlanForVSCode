@@ -1,5 +1,8 @@
 # Change Log
-All notable changes to the "alan" extension will be documented in this file.
+
+## 0.2.4
+- Improved tree widget
+- Better example validation task
 
 ## 0.2.3
 - Support new Alan model syntax
