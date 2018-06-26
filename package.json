@@ -2,6 +2,7 @@
     "name": "alan",
     "displayName": "Alan",
     "description": "",
+    "icon": "logo.png",
     "version": "0.2.4",
     "publisher": "M-industries",
     "repository": {
