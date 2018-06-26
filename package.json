@@ -61,7 +61,7 @@
             "explorer": [
                 {
                     "id": "alanTreeView",
-                    "name": "Alan Model",
+                    "name": "Alan Tree",
                     "when": "isAlanFile"
                 }
             ]
