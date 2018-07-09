@@ -19,9 +19,9 @@ To create tasks, run Configure Task from the command pallette (select Other if y
 				"cwd": "${fileDirname}"
 			},
 			"windows": {
-				"command": "& 'C:\\Program Files\\Git\\bin\\bash.exe' ${workspaceFolder}/alan validate vscode"
+				"command": "& 'C:\\Program Files\\Git\\bin\\bash.exe' ${workspaceFolder}/alan build vscode"
 			},
-			"command": "${workspaceFolder}/alan validate vscode",
+			"command": "${workspaceFolder}/alan build vscode",
 			"problemMatcher": "$alanc",
 			"presentation": {
 				"echo": true,
