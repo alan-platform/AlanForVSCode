@@ -177,7 +177,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             const fetch_task = new vscode.Task({
                 type: 'alan',
                 task: "fetch"
-            }, "fetch", "alan", new vscode.ShellExecution(`${alan} fetch${convert_output}`, default_options), problemMatchers);
+            }, "fetch", "alan", new vscode.ShellExecution(`${alan} fetch`, default_options), problemMatchers);
             fetch_task.group = vscode.TaskGroup.Clean; //??
             fetch_task.presentationOptions = {
                 "clear": true,
