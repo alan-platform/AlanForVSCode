@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.3.0
+- Add task definitions
+
 ## 0.2.4
 - Improved tree widget
 - Better example validation task

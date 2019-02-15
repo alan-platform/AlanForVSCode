@@ -1,35 +1,10 @@
 # Alan extension for VS Code
 
-In addition to syntax highlighting, this package provides naive support for goto/peek definition in Alan files, as well as a file structure tree.
+Provides tasks definitions, syntax highlighting, naive support for goto/peek definition, and a tree view for Alan files.
 
-## Build task
+## Tasks
 
-Run the build system and highlight errors in your project. 
+The build and fetch tasks can be started from within a `.alan` file.
+The extension resolves the nearest `alan` script for the current file, so you can work on multiple projects in a single workspace.
 
-To create tasks, run Configure Task from the command pallette (select Other if you don't have tasks configured yet). In the tasks.json add the example validation task. Note that this assumes the default PowerShell as your main shell, and using bash from GitForWindows.
-
-```json
-{
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "Alan Validate",
-			"type": "shell",
-			"options": {
-				"cwd": "${fileDirname}"
-			},
-			"windows": {
-				"command": "& 'C:\\Program Files\\Git\\bin\\bash.exe' ${workspaceFolder}/alan build --format vscode"
-			},
-			"command": "${workspaceFolder}/alan build --format vscode",
-			"problemMatcher": "$alanc",
-			"presentation": {
-				"echo": true,
-				"reveal": "silent",
-				"focus": false,
-				"panel": "shared"
-			}
-		}
-	]
-}
-```
+Running the package task requires that you open the `connections.alan` file of the deployment that you want to package.

@@ -3,11 +3,11 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.2.5",
-    "publisher": "M-industries",
+    "version": "0.3.0",
+    "publisher": "Kjerner",
     "repository": {
         "type": "git",
-        "url": "https://github.com/M-industries/AlanForVSCode.git"
+        "url": "https://github.com/Kjerner/AlanForVSCode.git"
     },
     "engines": {
         "vscode": "^1.31.0"
