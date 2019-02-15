@@ -3,14 +3,14 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "publisher": "M-industries",
     "repository": {
         "type": "git",
         "url": "https://github.com/M-industries/AlanForVSCode.git"
     },
     "engines": {
-        "vscode": "^1.13.0"
+        "vscode": "^1.31.0"
     },
     "categories": [
         "Programming Languages"
@@ -20,6 +20,20 @@
     ],
     "main": "./out/src/extension",
     "contributes": {
+        "taskDefinitions": [
+            {
+                "type": "alan",
+                "required": [
+                    "task"
+                ],
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The Alan task to customize"
+                    }
+                }
+            }
+        ],
         "commands": [
             {
                 "command": "editor.gotoAlanDefinitions",
@@ -32,6 +46,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Integrate with 'Go to Definition'"
+                },
+                "alan-definitions.taskShell": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Shell to use for executing Alan tasks.\nUse C:\\Windows\\sysnative\\bash.exe for WSL."
                 }
             }
         },
@@ -76,24 +95,7 @@
                 ],
                 "pattern": [
                     {
-                        "regexp": "(^.*\\.alan(?:\\.[^:]*)*):([0-9]+):([0-9]+):(error|warning): (.*)",
-                        "file": 1,
-                        "line": 2,
-                        "column": 3,
-                        "severity": 4,
-                        "message": 5
-                    }
-                ]
-            },
-            {
-                "name": "alanc2",
-                "owner": "alan",
-                "fileLocation": [
-                    "absolute"
-                ],
-                "pattern": [
-                    {
-                        "regexp": "(^.*alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)",
+                        "regexp": "^(.*alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)",
                         "file": 1,
                         "line": 2,
                         "column": 3,
@@ -114,12 +116,12 @@
         "package": "mkdir -p dist && vsce package --out dist/fabric-vscode.vsix"
     },
     "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.1.0",
-        "mocha": "^2.3.3",
-        "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32",
-        "vsce": "^1.29.0"
+        "@types/node": "^8.0.0",
+        "mocha": "^5.2.0",
+        "typescript": "^3.3.3",
+        "vsce": "^1.57.0",
+        "vscode": "^1.1.29"
     },
     "dependencies": {
         "nak": "^0.3.3"
