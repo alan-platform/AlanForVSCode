@@ -50,7 +50,7 @@
                 "alan-definitions.taskShell": {
                     "type": "string",
                     "default": null,
-                    "description": "Shell to use for executing Alan tasks.\nUse C:\\Windows\\sysnative\\bash.exe for WSL."
+                    "description": "Shell to use for executing Alan tasks.\nUse c:\\windows\\sysnative\\bash.exe for WSL."
                 }
             }
         },
