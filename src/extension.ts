@@ -6,7 +6,6 @@ import * as path from 'path';
 import {fuzzyDefinitionSearch} from './search';
 
 import { AlanTreeViewDataProvider } from './providers/AlanTreeView'
-import { resolve } from 'url';
 
 //This extension is based on Fuzzy Definitions from Johannes Rieken
 
@@ -14,11 +13,7 @@ export function deactivate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('setContext', 'isAlanFile', false);
 }
 
-// let alanTasksPromise: Thenable<vscode.Task[]> | undefined = undefined;
-
 export function activate(context: vscode.ExtensionContext) {
-
-    let config = vscode.workspace.getConfiguration('alan-definitions');
     let registrations: vscode.Disposable[] = [];
 
     function checkState() {
@@ -60,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     // pretend to be a definition provider
-    if (config.get<boolean>('integrateWithGoToDefinition')) {
+    if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
         registrations.push(vscode.languages.registerDefinitionProvider(
             'alan', {
                 provideDefinition: fuzzyDefinitionSearch
@@ -70,9 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.tasks.registerTaskProvider('alan', {
         provideTasks: () => {
-            // if (!alanTasksPromise)
-            //     alanTasksPromise =
-            return getAlanTasks(config.get<string>('taskShell'));
+            return getAlanTasks(vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell'));
         },
         resolveTask(task: vscode.Task): vscode.Task | undefined {
             return undefined;
