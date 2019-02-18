@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -50,7 +50,7 @@
                 "alan-definitions.taskShell": {
                     "type": "string",
                     "default": null,
-                    "description": "Shell to use for executing Alan tasks.\nUse c:\\windows\\sysnative\\bash.exe for WSL."
+                    "description": "Custom bash shell for executing Alan tasks."
                 }
             }
         },

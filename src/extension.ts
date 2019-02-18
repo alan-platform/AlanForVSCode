@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import {fuzzyDefinitionSearch} from './search';
-
 import { AlanTreeViewDataProvider } from './providers/AlanTreeView'
 
 //This extension is based on Fuzzy Definitions from Johannes Rieken
@@ -65,7 +64,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.tasks.registerTaskProvider('alan', {
         provideTasks: () => {
-            return getAlanTasks(vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell'));
+            const bash_shell = resolveBashShell(vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell'));
+            return getAlanTasks(bash_shell);
         },
         resolveTask(task: vscode.Task): vscode.Task | undefined {
             return undefined;
@@ -115,14 +115,40 @@ function exists(file: string): Promise<boolean> {
 	});
 }
 
+const wsl = "C:\\Windows\\System32\\wsl.exe";
+const wsl_bash = "c:\\windows\\sysnative\\bash.exe";
+const git_bash_x64 = "C:\\Program Files\\Git\\bin\\bash.exe"
+const git_bash_x32 = "C:\\Program Files (x86)\\Git\\bin\\bash.exe"
+
 function isWsl(shell: string) {
-    return shell == "c:\\windows\\sysnative\\bash.exe";
+    return shell == wsl_bash;
 }
 function normalizePath(path : string, shell: string) {
     return path
         .replace(/([a-zA-Z]):/, isWsl(shell) ? "/mnt/$1" : "$1:") // replace drive: with /mnt/drive for WSL
         .replace(/\\/g, '/') //  convert backslashes from windows paths
         .replace(/ /g, '\\ '); // escape spaces
+}
+
+// bash shell detection
+function resolveBashShell(shell: string) : string {
+    if (shell && shell !== null && shell !== "") {
+        return shell;
+    } else if (process.platform === 'win32') {
+        if (fs.existsSync(wsl)) {
+            return wsl_bash;
+        } else if (fs.existsSync(git_bash_x64)) {
+            return git_bash_x64;
+        } else if (fs.existsSync(git_bash_x32)) {
+            return git_bash_x32;
+        } else {
+            let error = "Could not locate a bash shell for executing Alan tasks. Please set one in the extension's settings.";
+            const selectedItem = vscode.window.showErrorMessage(error);
+            return undefined;
+        }
+    } else {
+        return undefined; //fallback to default
+    }
 }
 
 async function resolveAlan(file_dir: string) : Promise<string> {
@@ -161,7 +187,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
 
             const result: vscode.Task[] = [];
             const default_options: vscode.ShellExecutionOptions = {
-                "executable": shell && shell !== null ? shell : undefined, //custom or default
+                "executable": shell, //custom or default
                 "cwd": "${fileDirname}",
                 "shellArgs": ["-ci"]
             };
