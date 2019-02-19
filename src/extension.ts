@@ -210,10 +210,9 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 task: "build"
             }, "build", "alan", new vscode.ShellExecution(`${alan} build${convert_output}`, default_options), problemMatchers);
             build_task.group = vscode.TaskGroup.Build;
-
             build_task.presentationOptions = {
                 "clear": true,
-                "reveal": vscode.TaskRevealKind.Silent,
+                "reveal": vscode.TaskRevealKind.Always,
                 "showReuseMessage": false,
                 "focus": false
             };
