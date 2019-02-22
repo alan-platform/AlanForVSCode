@@ -191,7 +191,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 "cwd": "${fileDirname}",
                 "shellArgs": ["-ci"]
             };
-            const problemMatchers = ["$alanc"];
+            const problemMatchers = ["$alanc-range", "$alanc-lc"];
 
             const fetch_task = new vscode.Task({
                 type: 'alan',

@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -88,7 +88,7 @@
         },
         "problemMatchers": [
             {
-                "name": "alanc",
+                "name": "alanc-range",
                 "owner": "alan",
                 "fileLocation": [
                     "absolute"
@@ -103,6 +103,23 @@
                         "endColumn": 5,
                         "severity": 6,
                         "message": 7
+                    }
+                ]
+            },
+            {
+                "name": "alanc-lc",
+                "owner": "alan",
+                "fileLocation": [
+                    "absolute"
+                ],
+                "pattern": [
+                    {
+                        "regexp": "^(.*alan) at ([0-9]+):([0-9]+) (error|warning): (.*)",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3,
+                        "severity": 4,
+                        "message": 5
                     }
                 ]
             }
