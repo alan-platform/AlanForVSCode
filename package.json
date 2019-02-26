@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.3.5",
+    "version": "0.3.6",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -77,8 +77,17 @@
                 "path": "./syntaxes/alan.tmLanguage"
             }
         ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "alan-explorer",
+                    "title": "Alan Explorer",
+                    "icon": "resources/Alan-inv.svg"
+                }
+            ]
+        },
         "views": {
-            "explorer": [
+            "alan-explorer": [
                 {
                     "id": "alanTreeView",
                     "name": "Alan Tree",
