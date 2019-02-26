@@ -147,7 +147,7 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
         }
 
         var res = createItem(path.basename(this.activeEditor.document.fileName), 0, null, -1);
-        var current_node = null;
+        var current_node = res;
         var matches = [];
         splitted_file.forEach((x, i) => {
             var curr = x.match(re);
