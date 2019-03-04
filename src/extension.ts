@@ -189,7 +189,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             const default_options: vscode.ShellExecutionOptions = {
                 "executable": shell, //custom or default
                 "cwd": "${fileDirname}",
-                "shellArgs": ["-ci"]
+                "shellArgs": ["-c"]
             };
             const problemMatchers = ["$alanc-range", "$alanc-lc"];
 
