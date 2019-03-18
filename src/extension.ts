@@ -164,23 +164,26 @@ async function resolveAlan(file_dir: string) : Promise<string> {
             } else {
                 return resolve(alanFile);
             }
-		})(file_dir);
-	});
+        })(file_dir);
+    });
 }
 
 async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
-    let workspaceRoot = vscode.workspace.rootPath;
-    let activeFileName = vscode.window.activeTextEditor.document.fileName;
-    let activeFileDirName = path.dirname(activeFileName);
-	let emptyTasks: vscode.Task[] = [];
-	if (!workspaceRoot) {
-		return emptyTasks;
+    const workspaceRoot = vscode.workspace.rootPath;
+    const activeFileName = vscode.window.activeTextEditor.document.fileName;
+    const activeFileDirName = path.dirname(activeFileName);
+    const active_file_dirname_bash = normalizePath(activeFileDirName, shell);
+
+    let emptyTasks: vscode.Task[] = [];
+    if (!workspaceRoot) {
+        return emptyTasks;
     }
 
-    let alanFile: Promise<string> = resolveAlan(activeFileDirName);
+    const alanFile: Promise<string> = resolveAlan(activeFileDirName);
 
     return new Promise(resolve => {
         alanFile.then(alan_raw => {
+            const alan_root_folder = normalizePath(path.dirname(alan_raw), shell);
             const alan = normalizePath(alan_raw, shell);
             const wsl_convert = isWsl(shell) ? " | sed -e 's@/mnt/\\([a-z]\\)@\\1:@g'" : "";
             const convert_output = ` 2>&1 | sed ':begin;$!N;s@\\n\\t\\+@ @;tbegin;P;D'${wsl_convert}`; //hack while vscode does not support it via a problemmatcher
@@ -216,17 +219,44 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 "showReuseMessage": false,
                 "focus": false
             };
+
+            const migration_bootstrap_task = new vscode.Task({
+                type: 'alan',
+                task: "generate migration from empty dataset"
+            }, "generate migration from empty dataset", "alan", new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${alan_root_folder}/migrations/from_empty ${alan_root_folder}/systems/server/model.lib.link --bootstrap${convert_output}`, default_options), problemMatchers);
+            migration_bootstrap_task.group = vscode.TaskGroup.Clean; //??
+            migration_bootstrap_task.presentationOptions = {
+                "clear": true,
+                "reveal": vscode.TaskRevealKind.Always,
+                "showReuseMessage": false,
+                "focus": false
+            };
+
             result.push(fetch_task);
             result.push(build_task);
+            result.push(migration_bootstrap_task);
+
+            if (path.basename(activeFileName) === "migration.alan") {
+                const migration_task = new vscode.Task({
+                    type: 'alan',
+                    task: "regenerate migration using from/application.alan"
+                }, "regenerate migration using from/application.alan", "alan", new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${active_file_dirname_bash} ${alan_root_folder}/systems/server/model.lib.link${convert_output}`, default_options), problemMatchers);
+                migration_task.group = vscode.TaskGroup.Clean; //??
+                migration_task.presentationOptions = {
+                    "clear": true,
+                    "reveal": vscode.TaskRevealKind.Always,
+                    "showReuseMessage": false,
+                    "focus": false
+                };
+                result.push(migration_task);
+            }
 
             if (path.basename(activeFileName) === "connections.alan") {
-                const deployment_dir = normalizePath(activeFileDirName, shell);
-
                 const package_task = new vscode.Task({
                     type: 'alan',
                     task: "package"
-                }, "package", "alan", new vscode.ShellExecution(`./alan package ./dist/project.pkg ${deployment_dir}${convert_output}`, default_options), problemMatchers);
-                package_task.execution.options.cwd = path.dirname(alan_raw);
+                }, "package", "alan", new vscode.ShellExecution(`./alan package ./dist/project.pkg ${active_file_dirname_bash}${convert_output}`, default_options), problemMatchers);
+                package_task.execution.options.cwd = alan_root_folder;
                 package_task.group = vscode.TaskGroup.Build;
                 package_task.presentationOptions = {
                     "clear": true,
