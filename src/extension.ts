@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as sanitize from 'sanitize-filename';
 import {fuzzyDefinitionSearch} from './search';
 import { AlanTreeViewDataProvider } from './providers/AlanTreeView'
 
@@ -62,7 +63,56 @@ export function activate(context: vscode.ExtensionContext) {
         ));
     }
 
-    vscode.tasks.registerTaskProvider('alan', {
+    registrations.push(vscode.commands.registerCommand('input.migration.name', async function () {
+        const bash_shell = resolveBashShell(vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell'));
+
+        const activeFileName = vscode.window.activeTextEditor.document.fileName;
+        const activeFileDirName = path.dirname(activeFileName);
+        const alanFile: string = await resolveAlan(activeFileDirName);
+        const alan_root_folder = path.dirname(alanFile);
+
+        const migration_name_raw = await vscode.window.showInputBox({
+            value: 'from_empty',
+            valueSelection: [5,10],
+            placeHolder: `For example: <git commit id of 'from' model>`
+        });
+        const migration_name = sanitize(migration_name_raw);
+
+        return normalizePath(`${alan_root_folder}/migrations/${migration_name}`, bash_shell);
+    }));
+
+    registrations.push(vscode.commands.registerCommand('input.migration.model', async function () {
+        const bash_shell = resolveBashShell(vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell'));
+
+        const activeFileName = vscode.window.activeTextEditor.document.fileName;
+        const activeFileDirName = path.dirname(activeFileName);
+        const alanFile: string = await resolveAlan(activeFileDirName);
+        const alan_root_folder = path.dirname(alanFile);
+
+        const dirs = fs.readdirSync(path.join(alan_root_folder, "systems"))
+            .map(system => path.join(system, "model.lib.link"))
+            .filter(modellib => fs.existsSync(path.join(alan_root_folder, "systems", modellib)));
+
+        const migration_model = await vscode.window.showQuickPick(dirs, {
+            placeHolder: 'migration target model'
+        });
+
+        return normalizePath(`${alan_root_folder}/systems/${migration_model}`, bash_shell);
+    }));
+
+    registrations.push(vscode.commands.registerCommand('input.migration.type', async function () {
+        const migration_type_bootstrap = "initialization from empty dataset";
+        const migration_type = await vscode.window.showQuickPick([
+            migration_type_bootstrap,
+            "mapping from target conformant dataset"
+        ], {
+            placeHolder: 'migration type'
+        });
+
+        return `${migration_type === migration_type_bootstrap ? "--bootstrap" : ""}`
+    }));
+
+    registrations.push(vscode.tasks.registerTaskProvider('alan', {
         provideTasks: () => {
             const bash_shell = resolveBashShell(vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell'));
             return getAlanTasks(bash_shell);
@@ -70,15 +120,14 @@ export function activate(context: vscode.ExtensionContext) {
         resolveTask(task: vscode.Task): vscode.Task | undefined {
             return undefined;
         }
-    });
+    }));
+
+    registrations.push(vscode.window.registerTreeDataProvider(
+        "alanTreeView",
+        new AlanTreeViewDataProvider(context)
+    ));
 
     context.subscriptions.push(...registrations);
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider(
-            "alanTreeView",
-            new AlanTreeViewDataProvider(context)
-        )
-    );
 
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(() => {
@@ -108,11 +157,11 @@ function openLocation(location: vscode.Location) {
 }
 
 function exists(file: string): Promise<boolean> {
-	return new Promise<boolean>((resolve, _reject) => {
-		fs.exists(file, (value) => {
-			resolve(value);
-		});
-	});
+    return new Promise<boolean>((resolve, _reject) => {
+        fs.exists(file, (value) => {
+            resolve(value);
+        });
+    });
 }
 
 const wsl = "C:\\Windows\\System32\\wsl.exe";
@@ -220,12 +269,16 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 "focus": false
             };
 
-            const migration_bootstrap_task = new vscode.Task({
+            const migration_task = new vscode.Task({
                 type: 'alan',
-                task: "generate migration from empty dataset"
-            }, "generate migration from empty dataset", "alan", new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${alan_root_folder}/migrations/from_empty ${alan_root_folder}/systems/server/model.lib.link --bootstrap${convert_output}`, default_options), problemMatchers);
-            migration_bootstrap_task.group = vscode.TaskGroup.Clean; //??
-            migration_bootstrap_task.presentationOptions = {
+                task: "generate migration"
+            }, "generate migration", "alan", new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh`, [
+                "${command:input.migration.name}",
+                "${command:input.migration.model}",
+                "${command:input.migration.type}"
+            ], default_options), problemMatchers);
+            migration_task.group = vscode.TaskGroup.Clean; //??
+            migration_task.presentationOptions = {
                 "clear": true,
                 "reveal": vscode.TaskRevealKind.Always,
                 "showReuseMessage": false,
@@ -234,22 +287,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
 
             result.push(fetch_task);
             result.push(build_task);
-            result.push(migration_bootstrap_task);
-
-            if (path.basename(activeFileName) === "migration.alan") {
-                const migration_task = new vscode.Task({
-                    type: 'alan',
-                    task: "regenerate migration using from/application.alan"
-                }, "regenerate migration using from/application.alan", "alan", new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${active_file_dirname_bash} ${alan_root_folder}/systems/server/model.lib.link${convert_output}`, default_options), problemMatchers);
-                migration_task.group = vscode.TaskGroup.Clean; //??
-                migration_task.presentationOptions = {
-                    "clear": true,
-                    "reveal": vscode.TaskRevealKind.Always,
-                    "showReuseMessage": false,
-                    "focus": false
-                };
-                result.push(migration_task);
-            }
+            result.push(migration_task);
 
             if (path.basename(activeFileName) === "connections.alan") {
                 const package_task = new vscode.Task({
