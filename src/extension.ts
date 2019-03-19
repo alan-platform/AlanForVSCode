@@ -82,9 +82,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     registrations.push(vscode.commands.registerCommand('input.migration.model', async function () {
         const bash_shell = resolveBashShell();
-
         const active_file_name = vscode.window.activeTextEditor.document.fileName;
         const active_file_dirname = path.dirname(active_file_name);
+
         return new Promise(resolve => {
             resolveAlanRoot(active_file_dirname).then(alan_root => {
                 const systems_dirs = fs.readdirSync(path.join(alan_root, "systems"))
