@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.3.9
+- Add task for generating migrations
+
 ## 0.3.0
 - Add task definitions
 
