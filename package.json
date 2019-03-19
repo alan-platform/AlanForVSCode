@@ -38,18 +38,6 @@
             {
                 "command": "editor.gotoAlanDefinitions",
                 "title": "Go to Fuzzy Definitions"
-            },
-            {
-                "command": "input.migration.type",
-                "title": "select migration type"
-            },
-            {
-                "command": "input.migration.name",
-                "title": "select migration name"
-            },
-            {
-                "command": "input.migration.model",
-                "title": "select migration model"
             }
         ],
         "configuration": {
