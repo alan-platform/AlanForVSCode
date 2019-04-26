@@ -7,7 +7,6 @@ import * as sanitize from 'sanitize-filename';
 import {fuzzyDefinitionSearch} from './search';
 import {AlanTreeViewDataProvider} from './providers/AlanTreeView'
 
-import * as iconv from 'iconv-lite';
 import * as proc from 'child_process';
 import * as stripAnsiStream from 'strip-ansi-stream';
 
@@ -20,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     let registrations: vscode.Disposable[] = [];
 
     function checkState() {
-        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId == 'alan') {
+        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId =="alan") {
             vscode.commands.executeCommand('setContext', 'isAlanFile', true);
         } else {
             vscode.commands.executeCommand('setContext', 'isAlanFile', false);
@@ -28,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     checkState();
 
-    registrations.push(vscode.commands.registerTextEditorCommand('editor.gotoAlanDefinitions', editor => {
+    registrations.push(vscode.commands.registerTextEditorCommand('editor.showDefinitions', editor => {
         let {document, selection} = editor;
 
         return fuzzyDefinitionSearch(document, selection.active, new vscode.CancellationTokenSource().token).then(locations => {
@@ -58,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
     // pretend to be a definition provider
     if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
         registrations.push(vscode.languages.registerDefinitionProvider(
-            'alan', {
+           "alan", {
                 provideDefinition: fuzzyDefinitionSearch
             }
         ));
@@ -117,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     let diagnosticCollection = vscode.languages.createDiagnosticCollection();
-    registrations.push(vscode.commands.registerCommand('build', async function () {
+    registrations.push(vscode.commands.registerCommand('alan.build', async function () {
         const shell = resolveBashShell();
 
         const active_file_name = vscode.window.activeTextEditor.document.fileName;
@@ -140,13 +139,15 @@ export function activate(context: vscode.ExtensionContext) {
 
             let output_acc = "";
 
-            const channel = vscode.window.createOutputChannel('alan');
+            const channel = vscode.window.createOutputChannel('Alan');
             channel.show(true);
             const stripped_stream = stripAnsiStream();
             stripped_stream.on('data', data => {
-                channel.append(data.toString());
-                output_acc += data.toString();
+                let string: string = bashPathsToWinPaths(data.toString(), shell);
+                channel.append(string);
+                output_acc += string;
             });
+
             child.stdout.pipe(stripped_stream);
             child.stderr.pipe(stripped_stream);
 
@@ -168,7 +169,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                         const range_match = line.match(re_range);
                         if (range_match) {
-                            const file = vscode.Uri.file(bashPathToOutputPath(range_match[1], shell));
+                            const file = vscode.Uri.file(range_match[1]);
                             const line = parseInt(range_match[2], 10);
                             const column = parseInt(range_match[3], 10);
                             const endLine = parseInt(range_match[4], 10);
@@ -184,7 +185,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                         const locat_match = line.match(re_locat);
                         if (locat_match) {
-                            const file = vscode.Uri.file(bashPathToOutputPath(range_match[1], shell));
+                            const file = vscode.Uri.file(range_match[1]);
                             const line = parseInt(range_match[2], 10);
                             const column = parseInt(range_match[3], 10);
                             const severity = range_match[4];
@@ -199,7 +200,7 @@ export function activate(context: vscode.ExtensionContext) {
                         const re_link: RegExp = /^((?:\/|[a-zA-Z]:).*\.link) (error|warning): (.*)/;
                         const link_match = line.match(re_link);
                         if (link_match) {
-                            const file = vscode.Uri.file(bashPathToOutputPath(range_match[1], shell));
+                            const file = vscode.Uri.file(range_match[1]);
                             const severity = range_match[2];
                             const message = range_match[3];
 
@@ -294,11 +295,11 @@ function pathToBashPath(path : string, shell: string) {
         .replace(/ /g, '\\ '); // escape spaces
 }
 
-function bashPathToOutputPath(path: string, shell: string) {
+function bashPathsToWinPaths(string: string, shell: string) {
     if (isWsl(shell)) {
-        return path.replace(/\/mnt\/([a-z])\//, "$1:/");
+        return string.replace(/\/mnt\/([a-z])\//g, "$1:/");
     }
-    return path;
+    return string;
 }
 
 function resolveBashShell() : string {
@@ -327,7 +328,7 @@ async function resolveAlanRoot(file_dir: string) : Promise<string> {
 
     return new Promise((resolve, reject) => {
         (async function find(curdir) {
-            let alan_file = path.join(curdir, 'alan');
+            let alan_file = path.join(curdir,"alan");
             if (curdir === root) {
                 reject(null);
             } else if (!await exists(alan_file)) {
@@ -366,9 +367,9 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             const problemMatchers = ["$alanc-range", "$alanc-lc"];
 
             const fetch_task = new vscode.Task({
-                type: 'alan',
+                type: "alan",
                 task: "fetch"
-            }, "fetch", 'alan', new vscode.ShellExecution(`${alan} fetch`, default_options), problemMatchers);
+            }, "fetch","alan", new vscode.ShellExecution(`${alan} fetch`, default_options), problemMatchers);
             fetch_task.group = vscode.TaskGroup.Clean; //??
             fetch_task.presentationOptions = {
                 "clear": true,
@@ -378,9 +379,9 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             };
 
             const build_task = new vscode.Task({
-                type: 'alan',
+                type: "alan",
                 task: "build"
-            }, "build", 'alan', new vscode.ShellExecution(`${alan} build${convert_output}`, default_options), problemMatchers);
+            }, "build","alan", new vscode.ShellExecution("${command:alan.build}", default_options), problemMatchers);
             build_task.group = vscode.TaskGroup.Build;
             build_task.presentationOptions = {
                 "clear": true,
@@ -390,9 +391,9 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             };
 
             const migration_task = new vscode.Task({
-                type: 'alan',
+                type: "alan",
                 task: "generate migration"
-            }, "generate migration", 'alan', new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh`, [
+            }, "generate migration","alan", new vscode.ShellExecution(`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh`, [
                 "${command:input.migration.name}",
                 "${command:input.migration.model}",
                 "${command:input.migration.type}"
@@ -411,9 +412,9 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
 
             if (path.basename(active_file_name) === "connections.alan") {
                 const package_task = new vscode.Task({
-                    type: 'alan',
+                    type: "alan",
                     task: "package"
-                }, "package", 'alan', new vscode.ShellExecution(`./alan package ./dist/project.pkg ${active_file_dirname_bash}${convert_output}`, default_options), problemMatchers);
+                }, "package","alan", new vscode.ShellExecution(`./alan package ./dist/project.pkg ${active_file_dirname_bash}${convert_output}`, default_options), problemMatchers);
                 package_task.execution.options.cwd = alan_root_folder;
                 package_task.group = vscode.TaskGroup.Build;
                 package_task.presentationOptions = {
