@@ -7,7 +7,10 @@ import * as sanitize from 'sanitize-filename';
 import {fuzzyDefinitionSearch} from './search';
 import {AlanTreeViewDataProvider} from './providers/AlanTreeView'
 
-//This extension is based on Fuzzy Definitions from Johannes Rieken
+import * as iconv from 'iconv-lite';
+import * as proc from 'child_process';
+import * as stripAnsiStream from 'strip-ansi-stream';
+
 
 export function deactivate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('setContext', 'isAlanFile', false);
@@ -74,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
                     placeHolder: `For example: <git commit id of 'from' model>`
                 }).then(migration_name_raw => {
                     const migration_name = sanitize(migration_name_raw);
-                    resolve(normalizePath(`${alan_root}/migrations/${migration_name}`, bash_shell));
+                    resolve(pathToBashPath(`${alan_root}/migrations/${migration_name}`, bash_shell));
                 });
             });
         });
@@ -94,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showQuickPick(systems_dirs, {
                     placeHolder: 'migration target model'
                 }).then(migration_model => {
-                    resolve(normalizePath(`${alan_root}/systems/${migration_model}`, bash_shell));
+                    resolve(pathToBashPath(`${alan_root}/systems/${migration_model}`, bash_shell));
                 });
             });
         });
@@ -111,6 +114,112 @@ export function activate(context: vscode.ExtensionContext) {
         });
 
         return `${migration_type === migration_type_bootstrap ? "--bootstrap" : ""}`
+    }));
+
+    let diagnosticCollection = vscode.languages.createDiagnosticCollection();
+    registrations.push(vscode.commands.registerCommand('build', async function () {
+        const shell = resolveBashShell();
+
+        const active_file_name = vscode.window.activeTextEditor.document.fileName;
+        const active_file_dirname = path.dirname(active_file_name);
+
+        const alan_root = await resolveAlanRoot(active_file_dirname);
+        const alan = pathToBashPath(`${alan_root}/alan`, shell);
+
+        const spawn_opts: proc.SpawnOptions = {
+            cwd: active_file_dirname,
+        };
+
+        let child: proc.ChildProcess|undefined;
+        child = proc.spawn(shell, ["-c",`${alan} build`], spawn_opts);
+
+        if (child) {
+            child.on('error', err => {
+                // TODO
+            });
+
+            let output_acc = "";
+
+            const channel = vscode.window.createOutputChannel("Alan");
+            channel.show(true);
+            const stripped_stream = stripAnsiStream();
+            stripped_stream.on('data', data => {
+                channel.append(data.toString());
+                output_acc += data.toString();
+            });
+            child.stdout.pipe(stripped_stream);
+            child.stderr.pipe(stripped_stream);
+
+            child.on('close', retc => {
+                let diagnostics: [vscode.Uri, vscode.Diagnostic[]][] = [];
+
+                { // output parser
+                    let current_diagnostic: vscode.Diagnostic | undefined;
+                    const lines: String[] = output_acc.split("\n");
+                    lines.forEach((line) => {
+                        const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
+                        const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) at ([0-9]+):([0-9]+) (error|warning): (.*)/;
+
+                        function get_severity(severity: string): vscode.DiagnosticSeverity {
+                            return severity == "error" ?
+                                vscode.DiagnosticSeverity.Error : severity === "warning" ?
+                                    vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information
+                        }
+
+                        const range_match = line.match(re_range);
+                        if (range_match) {
+                            const file = vscode.Uri.file(bashPathToOutputPath(range_match[1], shell));
+                            const line = parseInt(range_match[2], 10);
+                            const column = parseInt(range_match[3], 10);
+                            const endLine = parseInt(range_match[4], 10);
+                            const endColumn = parseInt(range_match[5], 10);
+                            const severity = range_match[6];
+                            const message = range_match[7];
+
+                            let range = new vscode.Range(line - 1, column - 1, endLine - 1, endColumn - 1);
+                            current_diagnostic = new vscode.Diagnostic(range, message, get_severity(severity));
+                            diagnostics.push([file, [current_diagnostic]]);
+                            return;
+                        }
+
+                        const locat_match = line.match(re_locat);
+                        if (locat_match) {
+                            const file = vscode.Uri.file(bashPathToOutputPath(range_match[1], shell));
+                            const line = parseInt(range_match[2], 10);
+                            const column = parseInt(range_match[3], 10);
+                            const severity = range_match[4];
+                            const message = range_match[5];
+
+                            let range = new vscode.Range(line - 1, column - 1, line - 1, column - 1);
+                            current_diagnostic = new vscode.Diagnostic(range, message, get_severity(severity));
+                            diagnostics.push([file, [current_diagnostic]]);
+                            return;
+                        }
+
+                        const re_link: RegExp = /^((?:\/|[a-zA-Z]:).*\.link) (error|warning): (.*)/;
+                        const link_match = line.match(re_link);
+                        if (link_match) {
+                            const file = vscode.Uri.file(bashPathToOutputPath(range_match[1], shell));
+                            const severity = range_match[2];
+                            const message = range_match[3];
+
+                            let range = new vscode.Range(0, 0, 0, 0);
+                            current_diagnostic = new vscode.Diagnostic(range, message, get_severity(severity));
+                            diagnostics.push([file, [current_diagnostic]]);
+                            return;
+                        }
+
+                        if (current_diagnostic && line.startsWith("\t")) {
+                            current_diagnostic.message += '\n' + line;
+                        }
+                    });
+                }
+
+                diagnosticCollection.set(diagnostics);
+            });
+        } else {
+            //TODO
+        }
     }));
 
     registrations.push(vscode.tasks.registerTaskProvider('alan', {
@@ -147,6 +256,9 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }, null, context.subscriptions )
     );
+
+    // spawn process:
+    // https://github.com/vector-of-bool/vscode-cmake-tools/blob/develop/src/proc.ts
 }
 
 function openLocation(location: vscode.Location) {
@@ -166,18 +278,27 @@ function exists(file: string): Promise<boolean> {
 }
 
 const wsl = "C:\\Windows\\System32\\wsl.exe";
-const wsl_bash = "c:\\windows\\sysnative\\bash.exe";
-const git_bash_x64 = "C:\\Program Files\\Git\\bin\\bash.exe"
-const git_bash_x32 = "C:\\Program Files (x86)\\Git\\bin\\bash.exe"
+const wsl_bash = "C:\\Windows\\System32\\bash.exe";
+// const wsl_bash = "c:\\windows\\sysnative\\bash.exe";
+const git_bash_x64 = "C:\\Program Files\\Git\\bin\\bash.exe";
+const git_bash_x32 = "C:\\Program Files (x86)\\Git\\bin\\bash.exe";
+const linux_osx_bash = "/bin/bash";
 
 function isWsl(shell: string) {
     return shell == wsl_bash;
 }
-function normalizePath(path : string, shell: string) {
+function pathToBashPath(path : string, shell: string) {
     return path
         .replace(/([a-zA-Z]):/, isWsl(shell) ? "/mnt/$1" : "$1:") // replace drive: with /mnt/drive for WSL
         .replace(/\\/g, '/') //  convert backslashes from windows paths
         .replace(/ /g, '\\ '); // escape spaces
+}
+
+function bashPathToOutputPath(path: string, shell: string) {
+    if (isWsl(shell)) {
+        return path.replace(/\/mnt\/([a-z])\//, "$1:/");
+    }
+    return path;
 }
 
 function resolveBashShell() : string {
@@ -197,7 +318,7 @@ function resolveBashShell() : string {
             return undefined;
         }
     } else {
-        return undefined; //fallback to default
+        return linux_osx_bash; //fallback to default
     }
 }
 
@@ -222,7 +343,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
     const workspace_root = vscode.workspace.rootPath;
     const active_file_name = vscode.window.activeTextEditor.document.fileName;
     const active_file_dirname = path.dirname(active_file_name);
-    const active_file_dirname_bash = normalizePath(active_file_dirname, shell);
+    const active_file_dirname_bash = pathToBashPath(active_file_dirname, shell);
 
     let empty_tasks: vscode.Task[] = [];
     if (!workspace_root) {
@@ -231,8 +352,8 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
 
     return new Promise(resolve => {
         resolveAlanRoot(active_file_dirname).then(alan_root => {
-            const alan_root_folder = normalizePath(alan_root, shell);
-            const alan = normalizePath(`${alan_root}/alan`, shell);
+            const alan_root_folder = pathToBashPath(alan_root, shell);
+            const alan = pathToBashPath(`${alan_root}/alan`, shell);
             const wsl_convert = isWsl(shell) ? " | sed -e 's@/mnt/\\([a-z]\\)@\\1:@g'" : "";
             const convert_output = ` 2>&1 | sed ':begin;$!N;s@\\n\\t\\+@ @;tbegin;P;D'${wsl_convert}`; //hack while vscode does not support it via a problemmatcher
 

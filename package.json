@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.3.9",
+    "version": "0.4.0",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -37,7 +37,11 @@
         "commands": [
             {
                 "command": "editor.gotoAlanDefinitions",
-                "title": "Go to Fuzzy Definitions"
+                "title": "Alan: Go to Fuzzy Definitions"
+            },
+            {
+                "command": "build",
+                "title": "Alan: Build"
             }
         ],
         "configuration": {
@@ -147,10 +151,12 @@
         "mocha": "^5.2.0",
         "typescript": "^3.3.3",
         "vsce": "^1.57.0",
-        "vscode": "^1.1.29"
+        "vscode": "^1.1.33"
     },
     "dependencies": {
+        "iconv-lite": "^0.4.24",
         "nak": "^0.3.3",
-        "sanitize-filename": "^1.6.1"
+        "sanitize-filename": "^1.6.1",
+        "strip-ansi-stream": "^1.0.0"
     }
 }
