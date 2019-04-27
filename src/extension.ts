@@ -395,12 +395,12 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 "cwd": "${fileDirname}",
                 "shellArgs": ["-c"]
             };
-            const problemMatchers = ["$alanc-range", "$alanc-lc"];
+            const no_problem_matchers = []; // prevent popup to scan task output
 
             const fetch_task = new vscode.Task({
                 type: "alan",
                 task: "fetch"
-            }, "fetch","alan", new vscode.ShellExecution(`${alan} fetch`, default_options), problemMatchers);
+            }, "fetch","alan", new vscode.ShellExecution(`${alan} fetch`, default_options), no_problem_matchers);
             fetch_task.group = vscode.TaskGroup.Clean; //??
             fetch_task.presentationOptions = {
                 "clear": true,
@@ -412,26 +412,14 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             const build_task = new vscode.Task({
                 type: "alan",
                 task: "build"
-            }, "build","alan", new vscode.ShellExecution("${command:alan.build}", default_options), problemMatchers);
+            }, "build","alan", new vscode.ShellExecution("${command:alan.build}", default_options), no_problem_matchers);
             build_task.group = vscode.TaskGroup.Build;
-            build_task.presentationOptions = {
-                "clear": true,
-                "reveal": vscode.TaskRevealKind.Always,
-                "showReuseMessage": false,
-                "focus": false
-            };
 
             const migration_task = new vscode.Task({
                 type: "alan",
                 task: "generate migration"
-            }, "generate migration","alan", new vscode.ShellExecution("${command:alan.generateMigration}", default_options), problemMatchers);
+            }, "generate migration","alan", new vscode.ShellExecution("${command:alan.generateMigration}", default_options), no_problem_matchers);
             migration_task.group = vscode.TaskGroup.Clean; //??
-            migration_task.presentationOptions = {
-                "clear": true,
-                "reveal": vscode.TaskRevealKind.Always,
-                "showReuseMessage": false,
-                "focus": false
-            };
 
             result.push(fetch_task);
             result.push(build_task);
@@ -441,15 +429,9 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 const package_task = new vscode.Task({
                     type: "alan",
                     task: "package"
-                }, "package","alan", new vscode.ShellExecution("${command:alan.package}", default_options), problemMatchers);
+                }, "package","alan", new vscode.ShellExecution("${command:alan.package}", default_options), no_problem_matchers);
                 package_task.execution.options.cwd = alan_root_folder;
                 package_task.group = vscode.TaskGroup.Build;
-                package_task.presentationOptions = {
-                    "clear": true,
-                    "reveal": vscode.TaskRevealKind.Always,
-                    "showReuseMessage": false,
-                    "focus": false
-                };
                 result.push(package_task);
             }
 
