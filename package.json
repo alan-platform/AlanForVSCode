@@ -36,12 +36,8 @@
         ],
         "commands": [
             {
-                "command": "alan.showDefinitions",
+                "command": "alan.editor.showDefinitions",
                 "title": "Alan: Show Definitions"
-            },
-            {
-                "command": "alan.build",
-                "title": "Alan: Build"
             }
         ],
         "configuration": {

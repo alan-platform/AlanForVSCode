@@ -20,6 +20,33 @@ import * as vscode from 'vscode';
 import {extname, dirname, join} from 'path';
 import {exec} from 'child_process';
 
+export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscode.Location[]> {
+	let {document, selection} = editor;
+
+	//Fuzzy Definition Search based on Fuzzy Definitions from Johannes Rieken
+	return fuzzyDefinitionSearch(document, selection.active, new vscode.CancellationTokenSource().token).then(locations => {
+		if (!locations || locations.length === 0) {
+			let range = document.getWordRangeAtPosition(selection.active);
+			let message = range ? 'unable to find' : 'unable to find ' + document.getText(range);
+			vscode.window.setStatusBarMessage(message, 1500);
+			return;
+		}
+
+		if (locations.length === 1) {
+			return openLocation(locations[0]);
+		}
+
+		let picks = locations.map(l => ({
+			label: `${vscode.workspace.asRelativePath(l.uri)}:${l.range.start.line + 1}`,
+			description: l.uri.fsPath,
+			location: l
+		}));
+
+		return vscode.window.showQuickPick(picks).then(pick => {
+			return pick && openLocation(pick.location);
+		});
+	});
+}
 export function fuzzyDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken) {
 	if (document.getWordRangeAtPosition(pos)) {
 		return Promise.all([
@@ -32,6 +59,14 @@ export function fuzzyDefinitionSearch(document: vscode.TextDocument, pos: vscode
 			return all;
 		});
 	}
+}
+
+function openLocation(location: vscode.Location) {
+	return vscode.workspace.openTextDocument(location.uri).then(doc => {
+		return vscode.window.showTextDocument(doc).then(editor => {
+			editor.revealRange(location.range);
+		});
+	});
 }
 
 function dedup(locations: vscode.Location[]){
