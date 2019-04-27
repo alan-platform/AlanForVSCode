@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     let registrations: vscode.Disposable[] = [];
 
     function checkState() {
-        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === "alan") {
+        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'alan') {
             vscode.commands.executeCommand('setContext', 'isAlanFile', true);
         } else {
             vscode.commands.executeCommand('setContext', 'isAlanFile', false);
@@ -56,11 +56,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // pretend to be a definition provider
     if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
-        registrations.push(vscode.languages.registerDefinitionProvider(
-            "alan", {
-                provideDefinition: fuzzyDefinitionSearch
-            }
-        ));
+        registrations.push(vscode.languages.registerDefinitionProvider('alan', {
+            provideDefinition: fuzzyDefinitionSearch
+        }));
     }
 
     registrations.push(vscode.commands.registerCommand('input.migration.name', async function () {
@@ -89,9 +87,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         return new Promise(resolve => {
             resolveAlanRoot(active_file_dirname).then(alan_root => {
-                const systems_dirs = fs.readdirSync(path.join(alan_root, "systems"))
-                    .map(system => path.join(system, "model.lib.link"))
-                    .filter(modellib => fs.existsSync(path.join(alan_root, "systems", modellib)));
+                const systems_dirs = fs.readdirSync(path.join(alan_root, 'systems'))
+                    .map(system => path.join(system, 'model.lib.link'))
+                    .filter(modellib => fs.existsSync(path.join(alan_root, 'systems', modellib)));
 
                 vscode.window.showQuickPick(systems_dirs, {
                     placeHolder: 'migration target model'
@@ -104,36 +102,36 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     registrations.push(vscode.commands.registerCommand('input.migration.type', async function () {
-        const migration_type_bootstrap = "initialization from empty dataset";
+        const migration_type_bootstrap = 'initialization from empty dataset';
         const migration_type = await vscode.window.showQuickPick([
             migration_type_bootstrap,
-            "mapping from target conformant dataset"
+            'mapping from target conformant dataset'
         ], {
             placeHolder: 'migration type'
         });
 
-        return `${migration_type === migration_type_bootstrap ? "--bootstrap" : ""}`
+        return migration_type === migration_type_bootstrap ? '--bootstrap' : '';
     }));
 
-    let diagnosticCollection = vscode.languages.createDiagnosticCollection();
+    let diagnostic_collection = vscode.languages.createDiagnosticCollection();
     const channel = vscode.window.createOutputChannel('Alan');
 
     function executeCommand(shell_command: string, cwd: string, shell: string) {
         const spawn_opts: proc.SpawnOptions = { cwd: cwd };
 
         let child: proc.ChildProcess|undefined;
-        child = proc.spawn(shell, ["-c", shell_command], spawn_opts);
+        child = proc.spawn(shell, ['-c', shell_command], spawn_opts);
 
         if (child) {
             child.on('error', err => {
                 // TODO
             });
 
-            let output_acc = "";
+            let output_acc = '';
 
             channel.clear();
             channel.show(true);
-            diagnosticCollection.clear();
+            diagnostic_collection.clear();
 
             const stripped_stream = stripAnsiStream();
             stripped_stream.on('data', data => {
@@ -150,14 +148,14 @@ export function activate(context: vscode.ExtensionContext) {
 
                 { // output parser
                     let current_diagnostic: vscode.Diagnostic | undefined;
-                    const lines: String[] = output_acc.split("\n");
+                    const lines: String[] = output_acc.split('\n');
                     lines.forEach((line) => {
                         const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
                         const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) at ([0-9]+):([0-9]+) (error|warning): (.*)/;
 
                         function get_severity(severity: string): vscode.DiagnosticSeverity {
-                            return severity == "error" ?
-                                vscode.DiagnosticSeverity.Error : severity === "warning" ?
+                            return severity == 'error' ?
+                                vscode.DiagnosticSeverity.Error : severity === 'warning' ?
                                     vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information
                         }
 
@@ -204,13 +202,13 @@ export function activate(context: vscode.ExtensionContext) {
                             return;
                         }
 
-                        if (current_diagnostic && line.startsWith("\t")) {
+                        if (current_diagnostic && line.startsWith('\t')) {
                             current_diagnostic.message += '\n' + line;
                         }
                     });
                 }
 
-                diagnosticCollection.set(diagnostics);
+                diagnostic_collection.set(diagnostics);
             });
         } else {
             //TODO
@@ -237,13 +235,14 @@ export function activate(context: vscode.ExtensionContext) {
         const alan_root = await resolveAlanRoot(active_file_dirname);
         const alan_root_folder = pathToBashPath(alan_root, shell);
 
-        const name = await vscode.commands.executeCommand("input.migration.name");
-        const model = await vscode.commands.executeCommand("input.migration.model");
-        const type = await vscode.commands.executeCommand("input.migration.type");
+        const name = await vscode.commands.executeCommand('input.migration.name');
+        const model = await vscode.commands.executeCommand('input.migration.model');
+        const type = await vscode.commands.executeCommand('input.migration.type');
 
         executeCommand(
-            `${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${name} ${model} ${type}`
-        , active_file_dirname, shell);
+            `${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${name} ${model} ${type}`,
+            active_file_dirname,
+            shell);
     }));
 
     registrations.push(vscode.commands.registerCommand('alan.build', async function () {
@@ -268,7 +267,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     registrations.push(vscode.window.registerTreeDataProvider(
-        "alanTreeView",
+        'alanTreeView',
         new AlanTreeViewDataProvider(context)
     ));
 
@@ -312,33 +311,33 @@ function exists(file: string): Promise<boolean> {
     });
 }
 
-const wsl = "C:\\Windows\\System32\\wsl.exe";
-const wsl_bash = "C:\\Windows\\System32\\bash.exe";
-// const wsl_bash = "c:\\windows\\sysnative\\bash.exe";
-const git_bash_x64 = "C:\\Program Files\\Git\\bin\\bash.exe";
-const git_bash_x32 = "C:\\Program Files (x86)\\Git\\bin\\bash.exe";
-const linux_osx_bash = "/bin/bash";
+const wsl = 'C:\\Windows\\System32\\wsl.exe';
+const wsl_bash = 'C:\\Windows\\System32\\bash.exe';
+// const wsl_bash = 'c:\\windows\\sysnative\\bash.exe';
+const git_bash_x64 = 'C:\\Program Files\\Git\\bin\\bash.exe';
+const git_bash_x32 = 'C:\\Program Files (x86)\\Git\\bin\\bash.exe';
+const linux_osx_bash = '/bin/bash';
 
 function isWsl(shell: string) {
     return shell == wsl_bash;
 }
 function pathToBashPath(path : string, shell: string) {
     return path
-        .replace(/([a-zA-Z]):/, isWsl(shell) ? "/mnt/$1" : "$1:") // replace drive: with /mnt/drive for WSL
+        .replace(/([a-zA-Z]):/, isWsl(shell) ? '/mnt/$1' : '$1:') // replace drive: with /mnt/drive for WSL
         .replace(/\\/g, '/') //  convert backslashes from windows paths
         .replace(/ /g, '\\ '); // escape spaces
 }
 
 function bashPathsToWinPaths(string: string, shell: string) {
     if (isWsl(shell)) {
-        return string.replace(/\/mnt\/([a-z])\//g, "$1:/");
+        return string.replace(/\/mnt\/([a-z])\//g, '$1:/');
     }
     return string;
 }
 
 function resolveBashShell() : string {
     const shell: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('taskShell')
-    if (shell && shell !== null && shell !== "") {
+    if (shell && shell !== null && shell !== '') {
         return shell;
     } else if (process.platform === 'win32') {
         if (fs.existsSync(wsl)) {
@@ -348,7 +347,7 @@ function resolveBashShell() : string {
         } else if (fs.existsSync(git_bash_x32)) {
             return git_bash_x32;
         } else {
-            let error = "Could not locate a bash shell for executing Alan tasks. Please set one in the extension's settings.";
+            let error = 'Could not locate a bash shell for executing Alan tasks. Please set one in the extension\'s settings.';
             const selectedItem = vscode.window.showErrorMessage(error);
             return undefined;
         }
@@ -362,7 +361,7 @@ async function resolveAlanRoot(file_dir: string) : Promise<string> {
 
     return new Promise((resolve, reject) => {
         (async function find(curdir) {
-            let alan_file = path.join(curdir, "alan");
+            let alan_file = path.join(curdir, 'alan');
             if (curdir === root) {
                 reject(null);
             } else if (!await exists(alan_file)) {
@@ -391,45 +390,45 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
 
             const result: vscode.Task[] = [];
             const default_options: vscode.ShellExecutionOptions = {
-                "executable": shell, //custom or default
-                "cwd": "${fileDirname}",
-                "shellArgs": ["-c"]
+                'executable': shell, //custom or default
+                'cwd': '${fileDirname}',
+                'shellArgs': ['-c']
             };
             const no_problem_matchers = []; // prevent popup to scan task output
 
             const fetch_task = new vscode.Task({
-                type: "alan",
-                task: "fetch"
-            }, "fetch","alan", new vscode.ShellExecution(`${alan} fetch`, default_options), no_problem_matchers);
+                'type': 'alan',
+                'task': 'fetch'
+            }, 'fetch','alan', new vscode.ShellExecution(`${alan} fetch`, default_options), no_problem_matchers);
             fetch_task.group = vscode.TaskGroup.Clean; //??
             fetch_task.presentationOptions = {
-                "clear": true,
-                "reveal": vscode.TaskRevealKind.Always,
-                "showReuseMessage": false,
-                "focus": false
+                'clear': true,
+                'reveal': vscode.TaskRevealKind.Always,
+                'showReuseMessage': false,
+                'focus': false
             };
 
             const build_task = new vscode.Task({
-                type: "alan",
-                task: "build"
-            }, "build","alan", new vscode.ShellExecution("${command:alan.build}", default_options), no_problem_matchers);
+                'type': 'alan',
+                'task': 'build'
+            }, 'build','alan', new vscode.ShellExecution('${command:alan.build}', default_options), no_problem_matchers);
             build_task.group = vscode.TaskGroup.Build;
 
             const migration_task = new vscode.Task({
-                type: "alan",
-                task: "generate migration"
-            }, "generate migration", "alan", new vscode.ShellExecution("${command:alan.generateMigration}", default_options), no_problem_matchers);
+                'type': 'alan',
+                'task': 'generate migration'
+            }, 'generate migration', 'alan', new vscode.ShellExecution('${command:alan.generateMigration}', default_options), no_problem_matchers);
             migration_task.group = vscode.TaskGroup.Clean; //??
 
             result.push(fetch_task);
             result.push(build_task);
             result.push(migration_task);
 
-            if (path.basename(active_file_name) === "connections.alan") {
+            if (path.basename(active_file_name) === 'connections.alan') {
                 const package_task = new vscode.Task({
-                    type: "alan",
-                    task: "package"
-                }, "package", "alan", new vscode.ShellExecution("${command:alan.package}", default_options), no_problem_matchers);
+                    'type': 'alan',
+                    'task': 'package'
+                }, 'package', 'alan', new vscode.ShellExecution('${command:alan.package}', default_options), no_problem_matchers);
                 package_task.execution.options.cwd = alan_root_folder;
                 package_task.group = vscode.TaskGroup.Build;
                 result.push(package_task);
