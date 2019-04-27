@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     let registrations: vscode.Disposable[] = [];
 
     function checkState() {
-        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId =="alan") {
+        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === "alan") {
             vscode.commands.executeCommand('setContext', 'isAlanFile', true);
         } else {
             vscode.commands.executeCommand('setContext', 'isAlanFile', false);
@@ -57,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
     // pretend to be a definition provider
     if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
         registrations.push(vscode.languages.registerDefinitionProvider(
-           "alan", {
+            "alan", {
                 provideDefinition: fuzzyDefinitionSearch
             }
         ));
@@ -362,7 +362,7 @@ async function resolveAlanRoot(file_dir: string) : Promise<string> {
 
     return new Promise((resolve, reject) => {
         (async function find(curdir) {
-            let alan_file = path.join(curdir,"alan");
+            let alan_file = path.join(curdir, "alan");
             if (curdir === root) {
                 reject(null);
             } else if (!await exists(alan_file)) {
@@ -418,7 +418,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
             const migration_task = new vscode.Task({
                 type: "alan",
                 task: "generate migration"
-            }, "generate migration","alan", new vscode.ShellExecution("${command:alan.generateMigration}", default_options), no_problem_matchers);
+            }, "generate migration", "alan", new vscode.ShellExecution("${command:alan.generateMigration}", default_options), no_problem_matchers);
             migration_task.group = vscode.TaskGroup.Clean; //??
 
             result.push(fetch_task);
@@ -429,7 +429,7 @@ async function getAlanTasks(shell: string): Promise<vscode.Task[]> {
                 const package_task = new vscode.Task({
                     type: "alan",
                     task: "package"
-                }, "package","alan", new vscode.ShellExecution("${command:alan.package}", default_options), no_problem_matchers);
+                }, "package", "alan", new vscode.ShellExecution("${command:alan.package}", default_options), no_problem_matchers);
                 package_task.execution.options.cwd = alan_root_folder;
                 package_task.group = vscode.TaskGroup.Build;
                 result.push(package_task);
