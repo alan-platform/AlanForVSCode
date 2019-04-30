@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as proc from 'child_process';
-import * as stripAnsiStream from 'strip-ansi-stream';
 import * as sanitize from 'sanitize-filename';
 
 const wsl = 'C:\\Windows\\System32\\wsl.exe';

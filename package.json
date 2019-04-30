@@ -238,7 +238,6 @@
     },
     "dependencies": {
         "nak": "^0.3.3",
-        "sanitize-filename": "^1.6.1",
-        "strip-ansi-stream": "^1.0.0"
+        "sanitize-filename": "^1.6.1"
     }
 }
