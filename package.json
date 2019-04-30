@@ -132,7 +132,12 @@
                 "alan-definitions.taskShell": {
                     "type": "string",
                     "default": null,
-                    "description": "Custom bash shell for executing Alan tasks."
+                    "description": "Custom bash shell for running Alan tasks."
+                },
+                "alan-definitions.showTaskOutput": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show output window when running Alan tasks."
                 }
             }
         },

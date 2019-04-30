@@ -63,9 +63,18 @@ async function resolveBashShell() : Promise<string> {
 	}
 }
 
+function stripAnsi(string: string) {
+	const re_strip_ansi = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+	return string.replace(re_strip_ansi, '');
+}
+
 function executeCommand(shell_command: string, cwd: string, shell: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
-    output_channel.clear();
-    output_channel.show(true);
+	output_channel.clear();
+
+	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('showTaskOutput')) {
+		output_channel.show(true);
+	}
+
     diagnostics_collection.clear();
 
 	output_channel.appendLine(`> Running '${shell_command}' in '${cwd}'`);
@@ -79,16 +88,21 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 		});
 
 		let output_acc = '';
+		child.stdout.on('data', data => {
+			let string: string = bashPathsToWinPaths(data.toString(), shell);
+			string = stripAnsi(string);
 
-		const stripped_stream = stripAnsiStream();
-		stripped_stream.on('data', data => {
-			const string: string = bashPathsToWinPaths(data.toString(), shell);
 			output_channel.append(string);
 			output_acc += string;
 		});
 
-		child.stdout.pipe(stripped_stream);
-		child.stderr.pipe(stripped_stream);
+		child.stderr.on('data', data => {
+			let string: string = bashPathsToWinPaths(data.toString(), shell);
+			string = stripAnsi(string);
+
+			output_channel.append(string);
+			output_acc += string;
+		});
 
 		child.on('close', retc => {
 			const diagnostics: [vscode.Uri, vscode.Diagnostic[]][] = [];
