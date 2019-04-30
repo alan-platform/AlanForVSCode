@@ -34,9 +34,26 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.package', tasks.package_deployment.bind(tasks.package_deployment, output_channel, diagnostic_collection)),
 		vscode.commands.registerCommand('alan.tasks.generateMigration', tasks.generateMigration.bind(tasks.generateMigration, output_channel, diagnostic_collection)),
 		vscode.commands.registerCommand('alan.tasks.build', tasks.build.bind(tasks.build, output_channel, diagnostic_collection)),
+		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
+		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
 		vscode.window.registerTreeDataProvider('alanTreeView', new AlanTreeViewDataProvider(context)),
 		vscode.tasks.registerTaskProvider('alan', {
-			provideTasks: tasks.getTasksList,
+			provideTasks: async function () {
+				const active_file_name = vscode.window.activeTextEditor.document.fileName;
+				const active_file_dirname = require('path').dirname(active_file_name);
+
+				try { // alan projects
+					const alan_root = await tasks.resolveRoot(active_file_dirname, 'alan');
+					return tasks.getTasksList(alan_root);
+				} catch {
+					try { // alan dev/meta projects
+						const dev_root = await tasks.resolveRoot(active_file_dirname, 'project.json');
+						return tasks.getTasksListDev(dev_root);
+					} catch {
+						return [];
+					}
+				}
+			},
 			resolveTask(task: vscode.Task): vscode.Task | undefined {
 				return undefined;
 			}
