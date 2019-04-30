@@ -102,7 +102,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 								vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information
 					}
 
-					const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning|info): (.*)/;
+					const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
                     {
                         const range_match = line.match(re_range);
                         if (range_match) {
@@ -121,7 +121,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
                         }
                     }
 
-					const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) at ([0-9]+):([0-9]+) (error|warning|info): (.*)/;
+					const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) at ([0-9]+):([0-9]+) (error|warning): (.*)/;
                     {
                         const locat_match = line.match(re_locat);
                         if (locat_match) {
@@ -138,7 +138,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
                         }
                     }
 
-                    const re_link: RegExp = /^((?:\/|[a-zA-Z]:).*\.link) (error|warning|info): (.*)/;
+                    const re_link: RegExp = /^((?:\/|[a-zA-Z]:).*\.link) (error|warning): (.*)/;
                     {
                         const link_match = line.match(re_link);
                         if (link_match) {
@@ -153,7 +153,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
                         }
                     }
 
-                    const re_other: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) (error|warning|info): (.*)/;
+                    const re_other: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) (error|warning): (.*)/;
                     {
                         const other_match = line.match(re_other);
                         if (other_match) {
