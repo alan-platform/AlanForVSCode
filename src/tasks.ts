@@ -68,6 +68,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
     output_channel.show(true);
     diagnostics_collection.clear();
 
+	output_channel.appendLine(`> Running '${shell_command}' in '${cwd}'`);
     const child: proc.ChildProcess|undefined
         = proc.spawn(shell, ['-c', shell_command], { cwd: cwd });
 
@@ -239,26 +240,34 @@ export async function generateMigration(output_channel: vscode.OutputChannel, di
 		diagnostics_collection);
 }
 
-export async function build(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function build(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
 
-	const active_file_name = vscode.window.activeTextEditor.document.fileName;
-	const active_file_dirname = path.dirname(active_file_name);
+	const active_file_dirname = path.dirname(src);
 	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
 	executeCommand(`${alan} build`, active_file_dirname, shell, output_channel, diagnostics_collection);
 }
 
-export async function package_deployment(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function package_deployment(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
 
-	const active_file_name = vscode.window.activeTextEditor.document.fileName;
-	const active_file_dirname = path.dirname(active_file_name);
+	const active_file_dirname = path.dirname(src);
 	const active_file_dirname_bash = pathToBashPath(active_file_dirname, shell);
 	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 
 	executeCommand(`./alan package ./dist/project.pkg ${active_file_dirname_bash}`, alan_root, shell, output_channel, diagnostics_collection);
+}
+
+export async function fetch(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+	const shell = await resolveBashShell();
+
+	const active_file_dirname = path.dirname(src);
+	const alan_root = await resolveRoot(active_file_dirname, 'alan');
+	const alan = pathToBashPath(`${alan_root}/alan`, shell);
+
+	executeCommand(`${alan} fetch`, active_file_dirname, shell, output_channel, diagnostics_collection);
 }
 
 export async function resolveRoot(file_dir: string, root_marker: string) : Promise<string> {

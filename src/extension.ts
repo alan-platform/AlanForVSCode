@@ -12,6 +12,16 @@ function checkState() {
         vscode.commands.executeCommand('setContext', 'isAlanFile', false);
     }
 }
+function getContextResource(context, onResource) {
+	if (context && context._fsPath) {
+		onResource(context._fsPath);
+	} else if (vscode.window.activeTextEditor.document.fileName) {
+		onResource(vscode.window.activeTextEditor.document.fileName);
+	} else {
+		let error = 'Command execution failed: missing context resource for command.';
+		vscode.window.showErrorMessage(error);
+	}
+}
 
 export function deactivate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('setContext', 'isAlanFile', false);
@@ -31,9 +41,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
         vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
-		vscode.commands.registerCommand('alan.tasks.package', tasks.package_deployment.bind(tasks.package_deployment, output_channel, diagnostic_collection)),
+		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
+			getContextResource(taskctx, src => tasks.package_deployment(src, output_channel, diagnostic_collection));
+		}),
 		vscode.commands.registerCommand('alan.tasks.generateMigration', tasks.generateMigration.bind(tasks.generateMigration, output_channel, diagnostic_collection)),
-		vscode.commands.registerCommand('alan.tasks.build', tasks.build.bind(tasks.build, output_channel, diagnostic_collection)),
+		vscode.commands.registerCommand('alan.tasks.build', (taskctx) => {
+			getContextResource(taskctx, src => tasks.build(src, output_channel, diagnostic_collection));
+		}),
+		vscode.commands.registerCommand('alan.tasks.fetch', (taskctx) => {
+			getContextResource(taskctx, src => tasks.fetch(src, output_channel, diagnostic_collection));
+		}),
 		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
 		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
 		vscode.window.registerTreeDataProvider('alanTreeView', new AlanTreeViewDataProvider(context)),

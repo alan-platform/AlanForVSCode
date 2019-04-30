@@ -34,7 +34,89 @@
                 }
             }
         ],
+        "menus": {
+            "editor/title": [
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.tasks.build"
+                },
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.tasks.fetch"
+                },
+                {
+                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "command": "alan.tasks.package"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.tasks.build"
+                },
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.tasks.fetch"
+                },
+                {
+                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "command": "alan.tasks.package"
+                }
+            ],
+            "explorer/context": [
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.tasks.build"
+                },
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.tasks.fetch"
+                },
+                {
+                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "command": "alan.tasks.package"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "when": "undefined",
+                    "command": "alan.tasks.build"
+                },
+                {
+                    "when": "undefined",
+                    "command": "alan.tasks.generateMigration"
+                },
+                {
+                    "when": "undefined",
+                    "command": "alan.tasks.package"
+                },
+                {
+                    "when": "undefined",
+                    "command": "alan.tasks.fetch"
+                },
+                {
+                    "when": "resourceLangId == alan",
+                    "command": "alan.editor.showDefinitions"
+                }
+            ]
+        },
         "commands": [
+            {
+                "command": "alan.tasks.build",
+                "title": "Alan: Build"
+            },
+            {
+                "command": "alan.tasks.generateMigration",
+                "title": "Alan: Generate Migration"
+            },
+            {
+                "command": "alan.tasks.package",
+                "title": "Alan: Package Deployment"
+            },
+            {
+                "command": "alan.tasks.fetch",
+                "title": "Alan: Fetch"
+            },
             {
                 "command": "alan.editor.showDefinitions",
                 "title": "Alan: Show Definitions"
@@ -81,7 +163,7 @@
             "activitybar": [
                 {
                     "id": "alan-explorer",
-                    "title": "Alan Explorer",
+                    "title": "Alan",
                     "icon": "resources/Alan-inv.svg"
                 }
             ]
@@ -143,7 +225,7 @@
     },
     "devDependencies": {
         "@types/mocha": "^2.2.32",
-        "@types/node": "^8.0.0",
+        "@types/node": "^10.0.0",
         "mocha": "^5.2.0",
         "typescript": "^3.3.3",
         "vsce": "^1.57.0",
