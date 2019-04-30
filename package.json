@@ -79,19 +79,19 @@
             ],
             "commandPalette": [
                 {
-                    "when": "undefined",
+                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.build"
                 },
                 {
-                    "when": "undefined",
+                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.generateMigration"
                 },
                 {
-                    "when": "undefined",
+                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.package"
                 },
                 {
-                    "when": "undefined",
+                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.fetch"
                 },
                 {
