@@ -28,10 +28,17 @@ function bashPathsToWinPaths(string: string, shell: string) {
 	}
 	return string;
 }
-function exists(file: string): Promise<boolean> {
+function exists(inode: string): Promise<boolean> {
 	return new Promise<boolean>((resolve, _reject) => {
-		fs.exists(file, (value) => {
+		fs.exists(inode, (value) => {
 			resolve(value);
+		});
+	});
+}
+function stat(inode: string): Promise<fs.Stats> {
+	return new Promise<fs.Stats>((resolve, reject) => {
+		fs.stat(inode, (err, value) => {
+			if (!err) resolve(value);
 		});
 	});
 }
@@ -262,10 +269,10 @@ async function resolveAlanRoot(file_dir: string) : Promise<string> {
 			const alan_file = path.join(curdir, 'alan');
 			if (curdir === root) {
 				reject(undefined);
-			} else if (!await exists(alan_file)) {
-				find(path.dirname(curdir));
+			} else if (await exists(alan_file) && (await stat(alan_file)).isFile()) {
+				resolve(curdir);
 			} else {
-				return resolve(curdir);
+				find(path.dirname(curdir));
 			}
 		})(file_dir);
 	});
