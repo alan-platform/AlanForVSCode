@@ -184,6 +184,8 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 
 					if (current_diagnostic && line.startsWith('\t')) {
 						current_diagnostic.message += '\n' + line;
+					} else {
+						current_diagnostic = undefined;
 					}
 				});
 			}
