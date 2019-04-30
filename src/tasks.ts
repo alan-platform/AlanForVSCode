@@ -380,8 +380,8 @@ export async function getTasksListDev(dev_root: string): Promise<vscode.Task[]> 
 
 		const bootstrap_task = new vscode.Task({
 			'type': 'alan',
-			'task': 'bootstrap'
-		}, 'bootstrap','alan', new vscode.ShellExecution(`${bootstrap_sh}`, default_options), no_problem_matchers);
+			'task': 'fetch'
+		}, 'fetch','alan', new vscode.ShellExecution(`${bootstrap_sh}`, default_options), no_problem_matchers);
 		default_options.cwd = dev_root;
 		bootstrap_task.group = vscode.TaskGroup.Clean; //??
 		bootstrap_task.presentationOptions = {
