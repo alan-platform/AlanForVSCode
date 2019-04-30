@@ -294,8 +294,6 @@ export async function getTasksList(alan_root: string): Promise<vscode.Task[]> {
 	try {
 		const shell = await resolveBashShell();
 		const active_file_name = vscode.window.activeTextEditor.document.fileName;
-		const alan_root_folder = pathToBashPath(alan_root, shell);
-		const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
 		const result: vscode.Task[] = [];
 		const default_options: vscode.ShellExecutionOptions = {
@@ -308,14 +306,8 @@ export async function getTasksList(alan_root: string): Promise<vscode.Task[]> {
 		const fetch_task = new vscode.Task({
 			'type': 'alan',
 			'task': 'fetch'
-		}, 'fetch','alan', new vscode.ShellExecution(`${alan} fetch`, default_options), no_problem_matchers);
+		}, 'fetch','alan', new vscode.ShellExecution('${command:alan.tasks.fetch}', default_options), no_problem_matchers);
 		fetch_task.group = vscode.TaskGroup.Clean; //??
-		fetch_task.presentationOptions = {
-			'clear': true,
-			'reveal': vscode.TaskRevealKind.Always,
-			'showReuseMessage': false,
-			'focus': false
-		};
 
 		const build_task = new vscode.Task({
 			'type': 'alan',
@@ -338,7 +330,6 @@ export async function getTasksList(alan_root: string): Promise<vscode.Task[]> {
 				'type': 'alan',
 				'task': 'package'
 			}, 'package', 'alan', new vscode.ShellExecution('${command:alan.tasks.package}', default_options), no_problem_matchers);
-			package_task.execution.options.cwd = alan_root_folder;
 			package_task.group = vscode.TaskGroup.Build;
 			result.push(package_task);
 		}
