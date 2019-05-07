@@ -17,7 +17,7 @@
 */
 
 import * as vscode from 'vscode';
-import {extname, dirname, join} from 'path';
+import {extname, join} from 'path';
 import {exec} from 'child_process';
 
 export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscode.Location[]> {
