@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.4.4
+- Improved problem matching
+- Multiline warning and error messages
+- `Fetch`, `Build`, and `Package` tasks are now available as commands in the command palette when editing a `.alan` file
+- Right-click on a `.alan` file in the explorer shows applicable commands
+  - For any `.alan` file: `Alan: Fetch` and `Alan: Build`
+  - For `connections.alan` files: `Alan: Package Deployment`
+
 ## 0.3.9
 - Add task for generating migrations
 
