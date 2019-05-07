@@ -7,6 +7,7 @@
 - Right-click on a `.alan` file in the explorer shows applicable commands
   - For any `.alan` file: `Alan: Fetch` and `Alan: Build`
   - For `connections.alan` files: `Alan: Package Deployment`
+- Added user settings option for showing task output on task execution
 
 ## 0.3.9
 - Add task for generating migrations
