@@ -87,7 +87,7 @@
                     "command": "alan.tasks.generateMigration"
                 },
                 {
-                    "when": "resourceLangId == alan",
+                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
                     "command": "alan.tasks.package"
                 },
                 {
