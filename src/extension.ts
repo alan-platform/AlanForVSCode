@@ -7,7 +7,7 @@ import {showDefinitions, fuzzyDefinitionSearch} from './search';
 import {AlanTreeViewDataProvider} from './providers/AlanTreeView'
 
 function isAlanDeploySupported() : boolean {
-	if (false) {//process.env.APP_URL && process.env.CONTAINER_NAME && process.env.DEPLOY_HOST && process.env.DEPLOY_PORT) {
+	if (process.env.CONTAINER_NAME && process.env.DEPLOY_HOST && process.env.DEPLOY_PORT) {
 		vscode.commands.executeCommand('setContext', 'isAlanDeploySupported', true);
 		return true;
 	} else {
