@@ -235,11 +235,10 @@ async function getMigrationType(): Promise<string> {
 	return migration_type === migration_type_bootstrap ? '--bootstrap' : '';
 }
 
-export async function generateMigration(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function generateMigration(active_file: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
 
-	const active_file_name = vscode.window.activeTextEditor.document.fileName;
-	const active_file_dirname = path.dirname(active_file_name);
+	const active_file_dirname = path.dirname(active_file);
 	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan_root_folder = pathToBashPath(alan_root, shell);
 

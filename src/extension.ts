@@ -68,7 +68,15 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showErrorMessage(error);
 			}
 		}),
-		vscode.commands.registerCommand('alan.tasks.generateMigration', tasks.generateMigration.bind(tasks.generateMigration, output_channel, diagnostic_collection)),
+		vscode.commands.registerCommand('alan.tasks.generateMigration', (taskctx) => {
+			const context_file = resolveContextFile(taskctx);
+			if (context_file) {
+				tasks.generateMigration(context_file, output_channel, diagnostic_collection);
+			} else {
+				let error = 'Generate migration command failed: context alan file could not be resolved.';
+				vscode.window.showErrorMessage(error);
+			}
+		}),
 		vscode.commands.registerCommand('alan.tasks.build', (taskctx) => {
 			const context_file = resolveContextFile(taskctx);
 			if (context_file) {
@@ -90,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.deploy', async (taskctx) => {
 			try {
 				let alan_root = await resolveContextRoot(taskctx, 'deploy.sh');
-				tasks.deploy.bind(tasks.deploy, alan_root, output_channel, diagnostic_collection)
+				tasks.deploy(alan_root, output_channel, diagnostic_collection)
 			} catch {
 				let error = 'Deploy command failed. Unable to resolve `deploy.sh` script.';
 				vscode.window.showErrorMessage(error);
