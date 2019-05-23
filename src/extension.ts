@@ -126,5 +126,35 @@ export function activate(context: vscode.ExtensionContext) {
 			resolveTask(task: vscode.Task): vscode.Task | undefined {
 				return undefined;
 			}
-		}));
+		})
+	);
+
+	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);
+	fetch_statusbar_item.command = 'alan.tasks.fetch';
+	fetch_statusbar_item.text = 'Alan Fetch';
+	fetch_statusbar_item.show();
+	context.subscriptions.push(fetch_statusbar_item);
+
+	const build_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
+	build_statusbar_item.command = 'alan.tasks.build';
+	build_statusbar_item.text = 'Alan Build';
+	build_statusbar_item.show();
+	context.subscriptions.push(
+		build_statusbar_item,
+		vscode.window.onDidChangeActiveTextEditor(() => {
+			if (vscode.window.activeTextEditor.document.languageId === 'alan') {
+				build_statusbar_item.show();
+			} else {
+				build_statusbar_item.hide();
+			}
+		})
+	);
+
+	if (is_alan_deploy_supported) {
+		let deploy_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 2);
+		deploy_statusbar_item.command = 'alan.tasks.deploy';
+		deploy_statusbar_item.text = 'Alan Deploy';
+		deploy_statusbar_item.show();
+		context.subscriptions.push(deploy_statusbar_item);
+	}
 }
