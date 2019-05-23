@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -16,7 +16,10 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:alan"
+        "onLanguage:alan",
+        "workspaceContains:**/alan",
+        "workspaceContains:alan",
+        "workspaceContains:project.json"
     ],
     "main": "./dist/extension",
     "contributes": {
@@ -41,12 +44,15 @@
                     "command": "alan.tasks.build"
                 },
                 {
-                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.fetch"
                 },
                 {
                     "when": "resourceLangId == alan && resourceFilename == connections.alan",
                     "command": "alan.tasks.package"
+                },
+                {
+                    "when": "isAlanDeploySupported",
+                    "command": "alan.tasks.deploy"
                 }
             ],
             "editor/title/context": [
@@ -55,12 +61,15 @@
                     "command": "alan.tasks.build"
                 },
                 {
-                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.fetch"
                 },
                 {
                     "when": "resourceLangId == alan && resourceFilename == connections.alan",
                     "command": "alan.tasks.package"
+                },
+                {
+                    "when": "isAlanDeploySupported",
+                    "command": "alan.tasks.deploy"
                 }
             ],
             "explorer/context": [
@@ -69,12 +78,15 @@
                     "command": "alan.tasks.build"
                 },
                 {
-                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.fetch"
                 },
                 {
                     "when": "resourceLangId == alan && resourceFilename == connections.alan",
                     "command": "alan.tasks.package"
+                },
+                {
+                    "when": "isAlanDeploySupported",
+                    "command": "alan.tasks.deploy"
                 }
             ],
             "commandPalette": [
@@ -91,8 +103,11 @@
                     "command": "alan.tasks.package"
                 },
                 {
-                    "when": "resourceLangId == alan",
                     "command": "alan.tasks.fetch"
+                },
+                {
+                    "when": "isAlanDeploySupported",
+                    "command": "alan.tasks.deploy"
                 },
                 {
                     "when": "resourceLangId == alan",
@@ -116,6 +131,10 @@
             {
                 "command": "alan.tasks.fetch",
                 "title": "Alan: Fetch"
+            },
+            {
+                "command": "alan.tasks.deploy",
+                "title": "Alan: Deploy"
             },
             {
                 "command": "alan.editor.showDefinitions",
@@ -178,7 +197,7 @@
                 {
                     "id": "alanTreeView",
                     "name": "Alan Tree",
-                    "when": "isAlanFile"
+                    "when": "resourceLangId == alan"
                 }
             ]
         },

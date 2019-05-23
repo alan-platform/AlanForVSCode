@@ -275,21 +275,15 @@ export async function package_deployment(src: string, output_channel: vscode.Out
 	executeCommand(`./alan package ./dist/project.pkg ${active_file_dirname_bash}`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
-export async function fetch(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function fetch(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
-
-	const active_file_dirname = path.dirname(src);
-	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
-	executeCommand(`${alan} fetch`, active_file_dirname, shell, output_channel, diagnostics_collection);
+	executeCommand(`${alan} fetch`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
-export async function deploy(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function deploy(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
-
-	const active_file_dirname = path.dirname(src);
-	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const deploy_sh = pathToBashPath(`${alan_root}/deploy.sh`, shell);
 
 	executeCommand(`${deploy_sh}`, alan_root, shell, output_channel, diagnostics_collection);
@@ -305,6 +299,8 @@ export async function resolveRoot(file_dir: string, root_marker: string) : Promi
 				reject(undefined);
 			} else if (await exists(alan_file) && (await stat(alan_file)).isFile()) {
 				resolve(curdir);
+			} else if (path.dirname(curdir) == curdir) {
+				reject(undefined);
 			} else {
 				find(path.dirname(curdir));
 			}
@@ -312,18 +308,17 @@ export async function resolveRoot(file_dir: string, root_marker: string) : Promi
 	});
 }
 
-export async function getTasksList(alan_root: string): Promise<vscode.Task[]> {
+export async function getTasksList(alan_root: string, deploy_supported: boolean): Promise<vscode.Task[]> {
 	const workspace_root = vscode.workspace.rootPath;
 	if (!workspace_root) return [];
 
 	try {
 		const shell = await resolveBashShell();
-		const active_file_name = vscode.window.activeTextEditor.document.fileName;
+		const active_file_name = vscode.window.activeTextEditor.document.uri.fsPath;
 
 		const result: vscode.Task[] = [];
 		const default_options: vscode.ShellExecutionOptions = {
 			'executable': shell, //custom or default
-			'cwd': '${fileDirname}',
 			'shellArgs': ['-c']
 		};
 		const no_problem_matchers = []; // prevent popup to scan task output
@@ -359,16 +354,13 @@ export async function getTasksList(alan_root: string): Promise<vscode.Task[]> {
 			result.push(package_task);
 		}
 
-		const alan_root = await resolveRoot(path.dirname(active_file_name), 'alan');
-		const deploy_sh = path.join(alan_root, 'deploy.sh');
-		const deploy_sh_exists: boolean = await exists(deploy_sh);
-		if (deploy_sh_exists) {
-			const package_task = new vscode.Task({
+		if (deploy_supported) {
+			const deploy_task = new vscode.Task({
 				'type': 'alan',
 				'task': 'deploy'
 			}, 'deploy', 'alan', new vscode.ShellExecution('${command:alan.tasks.deploy}', default_options), no_problem_matchers);
-			package_task.group = vscode.TaskGroup.Test;
-			result.push(package_task);
+			deploy_task.group = vscode.TaskGroup.Test;
+			result.push(deploy_task);
 		}
 
 		return result;
