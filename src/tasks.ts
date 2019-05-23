@@ -285,6 +285,16 @@ export async function fetch(src: string, output_channel: vscode.OutputChannel, d
 	executeCommand(`${alan} fetch`, active_file_dirname, shell, output_channel, diagnostics_collection);
 }
 
+export async function deploy(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+	const shell = await resolveBashShell();
+
+	const active_file_dirname = path.dirname(src);
+	const alan_root = await resolveRoot(active_file_dirname, 'alan');
+	const deploy_sh = pathToBashPath(`${alan_root}/deploy.sh`, shell);
+
+	executeCommand(`${deploy_sh}`, alan_root, shell, output_channel, diagnostics_collection);
+}
+
 export async function resolveRoot(file_dir: string, root_marker: string) : Promise<string> {
 	const {root} = path.parse(file_dir);
 
@@ -346,6 +356,18 @@ export async function getTasksList(alan_root: string): Promise<vscode.Task[]> {
 				'task': 'package'
 			}, 'package', 'alan', new vscode.ShellExecution('${command:alan.tasks.package}', default_options), no_problem_matchers);
 			package_task.group = vscode.TaskGroup.Build;
+			result.push(package_task);
+		}
+
+		const alan_root = await resolveRoot(path.dirname(active_file_name), 'alan');
+		const deploy_sh = path.join(alan_root, 'deploy.sh');
+		const deploy_sh_exists: boolean = await exists(deploy_sh);
+		if (deploy_sh_exists) {
+			const package_task = new vscode.Task({
+				'type': 'alan',
+				'task': 'deploy'
+			}, 'deploy', 'alan', new vscode.ShellExecution('${command:alan.tasks.deploy}', default_options), no_problem_matchers);
+			package_task.group = vscode.TaskGroup.Test;
 			result.push(package_task);
 		}
 

@@ -41,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
         vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
+
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
 			getContextResource(taskctx, src => tasks.package_deployment(src, output_channel, diagnostic_collection));
 		}),
@@ -51,8 +52,13 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.fetch', (taskctx) => {
 			getContextResource(taskctx, src => tasks.fetch(src, output_channel, diagnostic_collection));
 		}),
+		vscode.commands.registerCommand('alan.tasks.deploy', (taskctx) => {
+			getContextResource(taskctx, src => tasks.deploy(src, output_channel, diagnostic_collection));
+		}),
+
 		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
 		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
+
 		vscode.window.registerTreeDataProvider('alanTreeView', new AlanTreeViewDataProvider(context)),
 		vscode.tasks.registerTaskProvider('alan', {
 			provideTasks: async function () {
