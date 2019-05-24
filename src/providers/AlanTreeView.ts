@@ -29,13 +29,9 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
 
         if (element) {
             return [].concat(this._getChildAttributeArray(element), this._getChildElementArray(element));
-        }
-
-        else if (this._alanDocument) {
-            return [this._alanDocument];
-        }
-
-        else {
+        } else if (this._alanDocument) {
+            return this._alanDocument.childNodes;
+        } else {
             return [];
         }
     }
@@ -118,49 +114,39 @@ export class AlanTreeViewDataProvider implements vsc.TreeDataProvider<any> {
             this._onDidChangeTreeData.fire();
             return;
         }
+        const document = this.activeEditor.document;
 
-        let alan = this.activeEditor.document.getText();
-
-        var splitted_file = alan.split("\n");
         var re = /^(\s*)(('[^']*')|([a-z]+[a-z\-\s]+))/;
 
-        function createItem(string, line_index, parent, level) {
+        function createItem(string, line_index) {
             return {
                 "tagName": string,
                 "localName": string,
                 "nodeType": 1,
                 "lineNumber": line_index + 1,
-                "childNodes": [],
-                "parent": parent,
-                "level": level
+                "childNodes": []
             };
         }
 
-        function getParent(cur_node, my_level) {
-            while (my_level < cur_node.level) {
-                cur_node = cur_node.parent;
+        const root_node = createItem(path.basename(document.fileName), 0);
+        let stack = [{ 'item': root_node, 'level': -1 }];
+
+        for (var i = 0; i < document.lineCount; i++) {
+            const line = document.lineAt(i);
+            var matches = line.text.match(re);
+            if (matches !== null && matches.length >= 3 && matches[2] !== "") {
+                const my_level = matches[1].length;
+                while (my_level <= stack[stack.length - 1].level)
+                    stack.pop();
+
+                const parent_node = stack[stack.length - 1].item;
+                var new_node = createItem(matches[2], i);
+                parent_node.childNodes.push(new_node);
+                stack.push({ 'item': new_node, 'level': my_level});
             }
-            if (my_level === cur_node.level) {
-                return cur_node.parent;
-            }
-            return cur_node;
         }
 
-        var res = createItem(path.basename(this.activeEditor.document.fileName), 0, null, -1);
-        var current_node = res;
-        var matches = [];
-        splitted_file.forEach((x, i) => {
-            var curr = x.match(re);
-            if (curr !== null && curr.length >= 3 && curr[2] !== "") {
-                current_node = getParent(current_node, curr[1].length);
-                var new_node = createItem(curr[2], i, current_node, curr[1].length);
-                current_node.childNodes.push(new_node);
-                current_node = new_node;
-            }
-        });
-
-        this._alanDocument = res;
-
+        this._alanDocument = root_node;
         this._onDidChangeTreeData.fire();
     }
 }
