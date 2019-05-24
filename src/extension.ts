@@ -41,6 +41,44 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 	}
 }
 
+class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
+	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
+		return new Promise((resolve, reject) => {
+			var re = /^(\s*)(('[^']*')|([a-z]+[a-z\-\_]+))/;
+
+			function createItem(name: string, line: vscode.TextLine | undefined, offset: number): vscode.DocumentSymbol {
+				return {
+					'name': name,
+					'detail': name,
+					'kind': vscode.SymbolKind.Class,
+					'range': new vscode.Range(new vscode.Position(line.range.start.line, offset), new vscode.Position(line.range.start.line, offset + name.length)),
+					'selectionRange': new vscode.Range(new vscode.Position(line.range.start.line, offset), new vscode.Position(line.range.start.line, offset + name.length)),
+					'children': []
+				};
+			}
+
+			const root_node = { 'children': [] };
+			let stack = [{ 'item': root_node, 'level': -1 }];
+
+			for (var i = 0; i < document.lineCount; i++) {
+				const line = document.lineAt(i);
+				var matches = line.text.match(re);
+				if (matches !== null && matches.length >= 3 && matches[2] !== "") {
+					const my_level = matches[1].length;
+					while (my_level <= stack[stack.length - 1].level)
+						stack.pop();
+
+					const parent_node = stack[stack.length - 1].item;
+					var new_node = createItem(matches[2], line, my_level);
+					parent_node.children.push(new_node);
+					stack.push({ 'item': new_node, 'level': my_level});
+				}
+			}
+			resolve(root_node.children);
+		});
+	}
+}
+
 export function deactivate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('setContext', 'isAlanDeploySupported', false);
 }
@@ -57,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	context.subscriptions.push(
-        vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
+		vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
 
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
 			const context_file = resolveContextFile(taskctx); // (connections.alan) file determines which deployment to build
@@ -126,7 +164,9 @@ export function activate(context: vscode.ExtensionContext) {
 			resolveTask(task: vscode.Task): vscode.Task | undefined {
 				return undefined;
 			}
-		})
+		}),
+
+		vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, new AlanSymbolProvider())
 	);
 
 	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);
