@@ -43,18 +43,17 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 
 class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
-		return new Promise((resolve, reject) => {
-			var re = /^(\s*)(('[^']*')|([a-z]+[a-z\-\_]+))/;
+		return new Promise((resolve) => {
+			var re = /^(\s*)(('[^']*')|([a-z]+[a-z\-\_\s]+))/;
 
-			function createItem(name: string, line: vscode.TextLine | undefined, offset: number): vscode.DocumentSymbol {
-				return {
-					'name': name,
-					'detail': name,
-					'kind': vscode.SymbolKind.Class,
-					'range': new vscode.Range(new vscode.Position(line.range.start.line, offset), new vscode.Position(line.range.start.line, offset + name.length)),
-					'selectionRange': new vscode.Range(new vscode.Position(line.range.start.line, offset), new vscode.Position(line.range.start.line, offset + name.length)),
-					'children': []
-				};
+			function createItem(name: string, line: vscode.TextLine, offset: number): vscode.DocumentSymbol {
+				return new vscode.DocumentSymbol(
+					name,
+					"",
+					vscode.SymbolKind.Class,
+					new vscode.Range(line.range.start.line, offset, line.range.start.line, offset + name.length),
+					new vscode.Range(line.range.start.line, offset, line.range.start.line, offset + name.length)
+				);
 			}
 
 			const root_node = { 'children': [] };
