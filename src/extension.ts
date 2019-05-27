@@ -44,13 +44,13 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 		return new Promise((resolve) => {
-			var re = /^(\s*)(('[^']*')|([a-z]+[a-z\-\_\s]+))/;
+			var re = /^(\s*)((?:'[^']*')|(?:[a-z]+[a-z\-\_\s]+))(.*)/;
 
-			function createItem(name: string, line: vscode.TextLine, offset: number): vscode.DocumentSymbol {
+			function createItem(name: string, detail: string, kind: vscode.SymbolKind, line: vscode.TextLine, offset: number): vscode.DocumentSymbol {
 				return new vscode.DocumentSymbol(
 					name,
-					"",
-					vscode.SymbolKind.Class,
+					detail,
+					kind,
 					new vscode.Range(line.range.start.line, offset, line.range.start.line, offset + name.length),
 					new vscode.Range(line.range.start.line, offset, line.range.start.line, offset + name.length)
 				);
@@ -68,7 +68,56 @@ class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 						stack.pop();
 
 					const parent_node = stack[stack.length - 1].item;
-					var new_node = createItem(matches[2], line, my_level);
+					const name_len = matches[2].length;
+					let name: string;
+					let kind: vscode.SymbolKind;
+					let detail: string = '';
+					if (name_len > 2 && matches[2][0] === "'") {
+						name = matches[2].slice(1, matches[2].length - 1);
+						kind = vscode.SymbolKind.Module;
+
+						const re_types = /\s*(?:\:|->)?\s+(command|collection|stategroup|group|text|integer|natural|file|reference-set|number|reference|matrix|densematrix|sparsematrix)/;
+						if (matches.length > 3 && matches[3]) {
+							const res_types = matches[3].match(re_types);
+							if (res_types && res_types[1]) {
+								detail = res_types[1];
+								switch (res_types[1]) {
+									case 'command':
+										kind = vscode.SymbolKind.Method;
+										break;
+									case 'collection':
+										kind = vscode.SymbolKind.Array;
+										break;
+									case 'stategroup':
+										kind = vscode.SymbolKind.Enum;
+										break;
+									case 'group':
+										kind = vscode.SymbolKind.Namespace;
+										break;
+									case 'text':
+										kind = vscode.SymbolKind.String;
+										break;
+									case 'integer':
+										kind = vscode.SymbolKind.Number;
+										break;
+									case 'natural':
+										kind = vscode.SymbolKind.Number;
+										break;
+									case 'file':
+										kind = vscode.SymbolKind.File;
+										break;
+									case 'reference-set':
+										kind = vscode.SymbolKind.TypeParameter;
+								}
+							} else {
+								kind = vscode.SymbolKind.EnumMember; //TODO: fix.
+							}
+						}
+					} else {
+						name = matches[2];
+						kind = vscode.SymbolKind.Struct;
+					}
+					var new_node = createItem(name, detail, kind, line, my_level);
 					parent_node.children.push(new_node);
 					stack.push({ 'item': new_node, 'level': my_level});
 				}
