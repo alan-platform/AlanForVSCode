@@ -44,7 +44,7 @@ export class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 					name = matches[2].slice(1, matches[2].length - 1);
 					kind = vscode.SymbolKind.Module;
 
-					const re_types = /^\s*(?:\:|->|:=)?\s+(command|with|collection|stategroup|group|text|integer|natural|file|reference-set|number|reference|matrix|densematrix|sparsematrix)/;
+					const re_types = /^\s*(?:\:|->|:=)?\s+(command|with|collection|component|stategroup|group|text|integer|natural|file|reference-set|number|reference|matrix|densematrix|sparsematrix)/;
 					if (matches.length > 3 && matches[3]) {
 						const res_types = matches[3].match(re_types);
 						if (res_types && res_types[1]) {
@@ -53,8 +53,14 @@ export class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 								case 'command':
 									kind = vscode.SymbolKind.Method;
 									break;
+								case 'with':
+									kind = vscode.SymbolKind.Event;
+									break;
 								case 'collection':
 									kind = vscode.SymbolKind.Array;
+									break;
+								case 'component':
+									kind = vscode.SymbolKind.Class;
 									break;
 								case 'stategroup':
 									kind = vscode.SymbolKind.Enum;
@@ -77,9 +83,23 @@ export class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 								case 'reference-set':
 									kind = vscode.SymbolKind.TypeParameter;
 									break;
-								case 'with':
-									kind = vscode.SymbolKind.Event;
+								//legacy:
+								case 'number':
+									kind = vscode.SymbolKind.Number;
 									break;
+								case 'reference':
+									kind = vscode.SymbolKind.String;
+									break;
+								case 'matrix':
+									kind = vscode.SymbolKind.Array;
+									break;
+								case 'densematrix':
+									kind = vscode.SymbolKind.Array;
+									break;
+								case 'sparsematrix':
+									kind = vscode.SymbolKind.Array;
+									break;
+
 							}
 						} else {
 							kind = vscode.SymbolKind.EnumMember; //TODO: fix.
