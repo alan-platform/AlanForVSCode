@@ -4,6 +4,9 @@
 - Add symbol provider for outline view and for finding symbols
 - Drop Alan Tree View in favor of outline view
 
+## 0.4.6
+- Added `Alan Fetch`, `Alan Build`, and `Alan Deploy` button
+
 ## 0.4.4
 - Improved problem matching
 - Multiline warning and error messages
