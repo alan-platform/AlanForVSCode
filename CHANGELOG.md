@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.4.10
+- Fix definition search
+
 ## 0.4.9
 - Add symbol provider for outline view and for finding symbols
 - Drop Alan Tree View in favor of outline view
