@@ -113,12 +113,8 @@ function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.P
 }
 
 function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
-
 	return new Promise<vscode.Location[]>((resolve, reject) => {
-
-		// let node = process.argv[0];
-		let module = join(require.resolve('nak'), '../../bin/nak');
-		// let word = document.getText(range);
+		let module = join(eval("require.resolve('nak')"), '../../bin/nak'); //eval because we use webpack...
 
 		let tmpword = document.getText(new vscode.Range(new vscode.Position(pos.line, 0), pos));
 
@@ -138,7 +134,6 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
 			return reject("No definition for this.");
 		}
 
-		// let pattern = `\t${word}`;
 		let pattern = `\t${word}`;
 		let cmd = `node ${module} --ackmate -G "*${extname(document.fileName)}"  "${pattern}" ${vscode.workspace.rootPath}`;
 		const nak = exec(cmd, (err, stdout, stderr) => {
