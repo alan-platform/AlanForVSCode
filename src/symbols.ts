@@ -44,7 +44,7 @@ export class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 					name = matches[2].slice(1, matches[2].length - 1);
 					kind = vscode.SymbolKind.Module;
 
-					const re_types = /\s*(?:\:|->)?\s+(command|collection|stategroup|group|text|integer|natural|file|reference-set|number|reference|matrix|densematrix|sparsematrix)/;
+					const re_types = /^\s*(?:\:|->|:=)?\s+(command|with|collection|stategroup|group|text|integer|natural|file|reference-set|number|reference|matrix|densematrix|sparsematrix)/;
 					if (matches.length > 3 && matches[3]) {
 						const res_types = matches[3].match(re_types);
 						if (res_types && res_types[1]) {
@@ -76,6 +76,10 @@ export class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
 									break;
 								case 'reference-set':
 									kind = vscode.SymbolKind.TypeParameter;
+									break;
+								case 'with':
+									kind = vscode.SymbolKind.Event;
+									break;
 							}
 						} else {
 							kind = vscode.SymbolKind.EnumMember; //TODO: fix.
