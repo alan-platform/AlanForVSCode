@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as tasks from './tasks';
 import {showDefinitions, fuzzyDefinitionSearch} from './search';
-import {AlanTreeViewDataProvider} from './providers/AlanTreeView'
+import {AlanSymbolProvider} from './symbols'
 
 function isAlanDeploySupported() : boolean {
 	if (process.env.CONTAINER_NAME && process.env.DEPLOY_HOST && process.env.DEPLOY_PORT) {
@@ -41,92 +41,6 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 	}
 }
 
-class AlanSymbolProvider implements vscode.DocumentSymbolProvider {
-	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
-		return new Promise((resolve) => {
-			var re = /^(\s*)((?:'[^']*')|(?:[a-z]+[a-z\-\_\s]+))(.*)/;
-
-			function createItem(name: string, detail: string, kind: vscode.SymbolKind, line: vscode.TextLine, offset: number): vscode.DocumentSymbol {
-				return new vscode.DocumentSymbol(
-					name,
-					detail,
-					kind,
-					new vscode.Range(line.range.start.line, offset, line.range.start.line, offset + name.length),
-					new vscode.Range(line.range.start.line, offset, line.range.start.line, offset + name.length)
-				);
-			}
-
-			const root_node = { 'children': [] };
-			let stack = [{ 'item': root_node, 'level': -1 }];
-
-			for (var i = 0; i < document.lineCount; i++) {
-				const line = document.lineAt(i);
-				var matches = line.text.match(re);
-				if (matches !== null && matches.length >= 3 && matches[2] !== "") {
-					const my_level = matches[1].length;
-					while (my_level <= stack[stack.length - 1].level)
-						stack.pop();
-
-					const parent_node = stack[stack.length - 1].item;
-					const name_len = matches[2].length;
-					let name: string;
-					let kind: vscode.SymbolKind;
-					let detail: string = '';
-					if (name_len > 2 && matches[2][0] === "'") {
-						name = matches[2].slice(1, matches[2].length - 1);
-						kind = vscode.SymbolKind.Module;
-
-						const re_types = /\s*(?:\:|->)?\s+(command|collection|stategroup|group|text|integer|natural|file|reference-set|number|reference|matrix|densematrix|sparsematrix)/;
-						if (matches.length > 3 && matches[3]) {
-							const res_types = matches[3].match(re_types);
-							if (res_types && res_types[1]) {
-								detail = res_types[1];
-								switch (res_types[1]) {
-									case 'command':
-										kind = vscode.SymbolKind.Method;
-										break;
-									case 'collection':
-										kind = vscode.SymbolKind.Array;
-										break;
-									case 'stategroup':
-										kind = vscode.SymbolKind.Enum;
-										break;
-									case 'group':
-										kind = vscode.SymbolKind.Namespace;
-										break;
-									case 'text':
-										kind = vscode.SymbolKind.String;
-										break;
-									case 'integer':
-										kind = vscode.SymbolKind.Number;
-										break;
-									case 'natural':
-										kind = vscode.SymbolKind.Number;
-										break;
-									case 'file':
-										kind = vscode.SymbolKind.File;
-										break;
-									case 'reference-set':
-										kind = vscode.SymbolKind.TypeParameter;
-								}
-							} else {
-								kind = vscode.SymbolKind.EnumMember; //TODO: fix.
-							}
-						}
-					} else {
-						name = matches[2];
-						kind = vscode.SymbolKind.Struct;
-					}
-					var new_node = createItem(name, detail, kind, line, my_level);
-					parent_node.children.push(new_node);
-					stack.push({ 'item': new_node, 'level': my_level});
-				}
-			}
-			resolve(root_node.children);
-		});
-	}
-}
-
 export function deactivate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('setContext', 'isAlanDeploySupported', false);
 }
@@ -134,6 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
 	const output_channel = vscode.window.createOutputChannel('Alan');
 	const is_alan_deploy_supported: boolean = isAlanDeploySupported();
+	const symbol_provider = new AlanSymbolProvider();
 
 	// pretend to be a definition provider
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
@@ -194,7 +109,6 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
 		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
 
-		vscode.window.registerTreeDataProvider('alanTreeView', new AlanTreeViewDataProvider(context)),
 		vscode.tasks.registerTaskProvider('alan', {
 			provideTasks: async function () {
 				try { // alan projects
@@ -214,7 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 
-		vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, new AlanSymbolProvider())
+		vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, symbol_provider)
 	);
 
 	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);

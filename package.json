@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.4.7",
+    "version": "0.4.8",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -192,15 +192,7 @@
                 }
             ]
         },
-        "views": {
-            "alan-explorer": [
-                {
-                    "id": "alanTreeView",
-                    "name": "Alan Tree",
-                    "when": "resourceLangId == alan"
-                }
-            ]
-        },
+        "views": {},
         "problemMatchers": [
             {
                 "name": "alanc-range",
