@@ -19,6 +19,7 @@
 import * as vscode from 'vscode';
 import {extname} from 'path';
 import * as nak from 'nak';
+import { Stream } from 'stream';
 
 export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscode.Location[]> {
 	let {document, selection} = editor;
@@ -134,8 +135,8 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
 
 		let pattern = `\t${word}`;
 		let result: vscode.Location[] = [];
-		global['callback'] = (_, streamer) => { //Hmm...
-			streamer.stream.on('data', (data) => {
+		global['callback'] = (_, streamer: {stream: Stream}) => { //Hmm...
+			streamer.stream.on('data', (data: string) => {
 				let matches = data.split('\n');
 				matches.pop(); // pop ""
 				let lastUri: vscode.Uri = vscode.Uri.file(matches[0].substr(1));
