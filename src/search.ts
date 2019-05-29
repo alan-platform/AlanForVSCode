@@ -17,9 +17,8 @@
 */
 
 import * as vscode from 'vscode';
-import {extname} from 'path';
-import * as nak from 'nak';
-import { Stream } from 'stream';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscode.Location[]> {
 	let {document, selection} = editor;
@@ -52,7 +51,7 @@ export function fuzzyDefinitionSearch(document: vscode.TextDocument, pos: vscode
 	if (document.getWordRangeAtPosition(pos)) {
 		return Promise.all([
 			delegatingDefinitionSearch(document, pos, token),
-			nakDefinitionSearch(document, pos, token)
+			alanDefinitionSearch(document, pos, token)
 		]).then(values => {
 			let [first, second] = values;
 			let all = first.concat(second);
@@ -105,7 +104,7 @@ function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.P
 		let result: vscode.Location[] = [];
 		for (let symbol of symbols) {
 			let {location} = symbol;
-			if (extname(location.uri.fsPath) === extname(document.fileName)) {
+			if (path.extname(location.uri.fsPath) === path.extname(document.fileName)) {
 				result.push(location);
 			}
 		}
@@ -113,7 +112,34 @@ function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.P
 	});
 }
 
-function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
+function findFiles(base: string, ext: string, files: (string[]|undefined), result: (string[]|undefined)) {
+    files = files || fs.readdirSync(base);
+    result = result || [];
+
+    files.forEach(file => {
+		var new_base = path.join(base, file);
+		if ( fs.statSync(new_base).isDirectory()) {
+			result = findFiles(new_base, ext, fs.readdirSync(new_base), result);
+		} else {
+			if (file.substr(-1 * ext.length) === ext) {
+				result.push(new_base);
+			}
+		}
+	});
+    return result
+}
+
+function findInFile(file: string, text: string, on_result: (iline: number, icharacter: number) => void) {
+	let lines = fs.readFileSync(file).toString().split("\n");
+	lines.forEach((line: string, iline: number) => {
+		const character = line.indexOf(text);
+		if (character !== -1) {
+			on_result(iline, character);
+		}
+	});
+}
+
+function alanDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
 	return new Promise<vscode.Location[]>((resolve, reject) => {
 		let tmpword = document.getText(new vscode.Range(new vscode.Position(pos.line, 0), pos));
 
@@ -132,42 +158,18 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
 		if (word.length > 300) {
 			return reject("No definition for this.");
 		}
-
-		let pattern = `\t${word}`;
-		let result: vscode.Location[] = [];
-		global['callback'] = (_, streamer: {stream: Stream}) => { //Hmm...
-			streamer.stream.on('data', (data: string) => {
-				let matches = data.split('\n');
-				matches.pop(); // pop ""
-				let lastUri: vscode.Uri = vscode.Uri.file(matches[0].substr(1));
-				for (let imatch = 1; imatch < matches.length; ++imatch) {
-					let lastMatch: RegExpMatchArray = /^(\d+);\d+ (\d+)/.exec(matches[imatch]);
-					let line = parseInt(lastMatch[1]) - 1;
-					let end = parseInt(lastMatch[2]);
-					range = new vscode.Range(line, end - word.length + 1, line, end);
-
-					if (lastUri.toString() !== document.uri.toString() || !range.contains(pos)) {
-						result.push(new vscode.Location(lastUri, range));
-					}
+		const pattern = `\t${word}`;
+		const result: vscode.Location[] = [];
+		const files: string[] = findFiles(vscode.workspace.rootPath, path.extname(document.fileName), undefined, undefined);
+		files.forEach((file) => {
+			let lastUri: vscode.Uri = vscode.Uri.file(file);
+			findInFile(file, pattern, (line, character) => {
+				range = new vscode.Range(line, character + 1, line, character + word.length + 1);
+				if (lastUri.toString() !== document.uri.toString() || !range.contains(pos)) {
+					result.push(new vscode.Location(lastUri, range));
 				}
 			});
-			streamer.stream.on('end', () => {
-				resolve(result);
-			});
-		};
-
-		// wait no longer then 60sec for nak
-		setTimeout(() => {
-			resolve([]);
-			nak.kill();
-		}, 60000);
-		token.onCancellationRequested(() => nak.kill());
-
-		nak.run({
-			ackmate: true,
-			pathInclude: `*${extname(document.fileName)}`,
-			query: pattern,
-			path: vscode.workspace.rootPath
 		});
+		resolve(result);
 	});
 }

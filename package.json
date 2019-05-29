@@ -3,7 +3,7 @@
     "displayName": "Alan",
     "description": "",
     "icon": "logo.png",
-    "version": "0.4.10",
+    "version": "0.4.11",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -252,7 +252,6 @@
         "webpack-cli": "^3.3.2"
     },
     "dependencies": {
-        "nak": "^0.3.3",
         "sanitize-filename": "^1.6.1"
     }
 }
