@@ -126,7 +126,7 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
 			return reject("No definition for this.");
 		}
 
-		let range = document.getWordRangeAtPosition(new vscode.Position(pos.line, charpos), /'[^']+'/); //TODO: use /'[^']+'/ wordPattern instead.
+		let range = document.getWordRangeAtPosition(new vscode.Position(pos.line, charpos), /'[^']+'/);
 		let word = document.getText(range);
 
 		if (word.length > 300) {
