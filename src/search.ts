@@ -17,8 +17,8 @@
 */
 
 import * as vscode from 'vscode';
-import {extname, join} from 'path';
-import {exec} from 'child_process';
+import {extname} from 'path';
+import * as nak from 'nak';
 
 export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscode.Location[]> {
 	let {document, selection} = editor;
@@ -114,8 +114,6 @@ function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.P
 
 function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
 	return new Promise<vscode.Location[]>((resolve, reject) => {
-		let module = join(eval("require.resolve('nak')"), '../../bin/nak'); //eval because we use webpack...
-
 		let tmpword = document.getText(new vscode.Range(new vscode.Position(pos.line, 0), pos));
 
 		let charpos = pos.character;
@@ -135,20 +133,14 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
 		}
 
 		let pattern = `\t${word}`;
-		let cmd = `node ${module} --ackmate -G "*${extname(document.fileName)}"  "${pattern}" ${vscode.workspace.rootPath}`;
-		const nak = exec(cmd, (err, stdout, stderr) => {
-			if (err || stderr) {
-				return reject(err || stderr);
-			}
-
-			let result: vscode.Location[] = [];
-			let lines = stdout.split('\n');
-			let lastUri: vscode.Uri;
-			let lastMatch: RegExpMatchArray;
-			for (let line of lines) {
-				if (line[0] === ':') {
-					lastUri = vscode.Uri.file(line.substr(1));
-				} else if (lastMatch = /^(\d+);\d+ (\d+)/.exec(line)) {
+		let result: vscode.Location[] = [];
+		global['callback'] = (_, streamer) => { //Hmm...
+			streamer.stream.on('data', (data) => {
+				let matches = data.split('\n');
+				matches.pop(); // pop ""
+				let lastUri: vscode.Uri = vscode.Uri.file(matches[0].substr(1));
+				for (let imatch = 1; imatch < matches.length; ++imatch) {
+					let lastMatch: RegExpMatchArray = /^(\d+);\d+ (\d+)/.exec(matches[imatch]);
 					let line = parseInt(lastMatch[1]) - 1;
 					let end = parseInt(lastMatch[2]);
 					range = new vscode.Range(line, end - word.length + 1, line, end);
@@ -157,17 +149,24 @@ function nakDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position
 						result.push(new vscode.Location(lastUri, range));
 					}
 				}
-			}
-
-			resolve(result);
-		});
+			});
+			streamer.stream.on('end', () => {
+				resolve(result);
+			});
+		};
 
 		// wait no longer then 60sec for nak
 		setTimeout(() => {
 			resolve([]);
 			nak.kill();
 		}, 60000);
-
 		token.onCancellationRequested(() => nak.kill());
+
+		nak.run({
+			ackmate: true,
+			pathInclude: `*${extname(document.fileName)}`,
+			query: pattern,
+			path: vscode.workspace.rootPath
+		});
 	});
 }
