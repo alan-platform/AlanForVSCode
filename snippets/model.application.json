@@ -1,0 +1,74 @@
+{
+    "collection": {
+        "prefix": "collection",
+        "scope": "alan",
+        "body": [
+			"'${1:name}': collection ['${2:key name reference}'] {",
+            "\t'${2:key name}': text",
+            "\t${0}",
+			"}"
+        ],
+        "description": "collection property (model.application language)"
+	},
+    "stategroup": {
+        "prefix": "stategroup",
+        "scope": "alan",
+        "body": [
+			"'${1:name}': stategroup (",
+			"\t'${2:state name}' -> { $0}",
+			"\t'${3:state name}' -> { }",
+			")"
+        ],
+        "description": "state group property (model.application language)"
+    },
+    "integer": {
+        "prefix": "integer",
+        "scope": "alan",
+        "body": [
+            "'${1:name}': integer '${2:numerical type}'${0}"
+        ],
+        "description": "integer property (model.application language)"
+    },
+    "natural": {
+        "prefix": "natural",
+        "scope": "alan",
+        "body": [
+            "'${1:name}': natural '${2:numerical type}'${0}"
+        ],
+        "description": "natural number property (model.application language)"
+    },
+    "text": {
+        "prefix": "text",
+        "scope": "alan",
+        "body": [
+            "'${0:name}': text"
+        ],
+        "description": "text property (model.application language)"
+    },
+    "text-with-constraint": {
+        "prefix": "text-with-constraint",
+        "scope": "alan",
+        "body": [
+            "'${1:name}': text -> ${0}"
+        ],
+        "description": "text property with constraint (model.application language)"
+    },
+    "group": {
+        "prefix": "group",
+        "scope": "alan",
+        "body": [
+            "'${1:name}': group {",
+            "\t$0",
+            "}"
+        ],
+        "description": "group property (model.application language)"
+    },
+    "reference-set": {
+        "prefix": "reference-set",
+        "scope": "alan",
+        "body": [
+            "'${1:name}': reference-set -> ${2:<node type path>} => inverse >'${3:reference to invert}'${0}"
+        ],
+        "description": "reference-set property (model.application language)"
+    }
+}

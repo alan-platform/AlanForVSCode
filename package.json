@@ -23,6 +23,12 @@
     ],
     "main": "./dist/extension",
     "contributes": {
+        "snippets": [
+            {
+                "language": "alan",
+                "path": "./snippets/model.application.json"
+            }
+        ],
         "taskDefinitions": [
             {
                 "type": "alan",
