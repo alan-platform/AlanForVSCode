@@ -1,9 +1,9 @@
 {
     "collection": {
         "prefix": "collection",
-        "scope": "alan",
+        "fileMatch": "application.alan",
         "body": [
-			"'${1:name}': collection ['${2:key name reference}'] {",
+			"'${1:name}': collection ['${2:key name}'] {",
             "\t'${2:key name}': text",
             "\t${0}",
 			"}"
