@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.4.12
+- use tab indentation for `.alan` files
+- enable tab stops by default for `.alan` files
+- indentation rules for automatic indentation on move/paste
+- snippets for `application.alan` files
+
+## 0.4.11
+- Drop dependency on nak for definition search
+
 ## 0.4.10
 - Fix definition search
 
