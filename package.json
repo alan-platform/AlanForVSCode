@@ -166,6 +166,14 @@
                 }
             }
         },
+        "configurationDefaults": {
+            "[alan]": {
+                "editor.autoIndent": true,
+                "editor.useTabStops": true,
+                "editor.insertSpaces": false,
+                "editor.detectIndentation": false
+            }
+        },
         "languages": [
             {
                 "id": "alan",
