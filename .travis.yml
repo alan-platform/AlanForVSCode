@@ -10,11 +10,20 @@ script: |
   ./node_modules/.bin/vsce package
 
 before_deploy: |
-  export TRAVIS_TAG="published/$(jq -j '.version' < package.json)"
+  export VERSION="$(jq -j '.version' < ./package.json)"
+  export TRAVIS_TAG="published/${VERSION}"
 
 deploy:
-  provider: script
-  skip_cleanup: true
-  on:
-    branch: release
-  script: bash ./deploy.sh
+  - provider: script
+    skip_cleanup: true
+    script: bash ./deploy.sh
+    on:
+      branch: release
+  - provider: releases
+    api_key: ${GITHUB_TOKEN}
+    file_glob: true
+    file: *.vsix
+    skip_cleanup: true
+    name: "Alan for Visual Studio Code v${VERSION}"
+    on:
+      branch: release
