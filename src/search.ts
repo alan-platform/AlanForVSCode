@@ -113,17 +113,21 @@ function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.P
 }
 
 function findFiles(base: string, ext: string, files: (string[]|undefined), result: (string[]|undefined)) {
-    files = files || fs.readdirSync(base);
+	files = files || fs.readdirSync(base);
     result = result || [];
 
     files.forEach(file => {
-		var new_base = path.join(base, file);
-		if ( fs.statSync(new_base).isDirectory()) {
-			result = findFiles(new_base, ext, fs.readdirSync(new_base), result);
-		} else {
-			if (file.substr(-1 * ext.length) === ext) {
-				result.push(new_base);
+		try {
+			var new_base = path.join(base, file);
+			if (fs.statSync(new_base).isDirectory()) {
+				result = findFiles(new_base, ext, fs.readdirSync(new_base), result);
+			} else {
+				if (file.substr(-1 * ext.length) === ext) {
+					result.push(new_base);
+				}
 			}
+		} catch {
+			//ignore
 		}
 	});
     return result
@@ -160,6 +164,7 @@ function alanDefinitionSearch(document: vscode.TextDocument, pos: vscode.Positio
 		}
 		const pattern = `\t${word}`;
 		const result: vscode.Location[] = [];
+
 		const files: string[] = findFiles(vscode.workspace.rootPath, path.extname(document.fileName), undefined, undefined);
 		files.forEach((file) => {
 			let lastUri: vscode.Uri = vscode.Uri.file(file);
