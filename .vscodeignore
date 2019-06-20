@@ -2,7 +2,6 @@
 .vscode
 node_modules
 out/
-publish.sh
 src/
 tsconfig.json
 webpack.config.js
