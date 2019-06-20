@@ -2,3 +2,8 @@ language: node_js
 node_js:
   - "10"
 script: ./node_modules/.bin/vsce package
+deploy:
+  provider: script
+  script: ./node_modules/.bin/vsce publish -p $VSCE_TOKEN --packagePath *.vsix
+  on:
+    branch: release
