@@ -4,6 +4,6 @@ node_js:
 script: ./node_modules/.bin/vsce package
 deploy:
   provider: script
-  script: ./node_modules/.bin/vsce publish -p $VSCE_TOKEN --packagePath *.vsix
+  script: ./publish.sh
   on:
     branch: release
