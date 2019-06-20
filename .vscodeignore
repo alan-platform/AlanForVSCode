@@ -1,5 +1,6 @@
 .gitignore
 .vscode
+deploy.sh
 node_modules
 out/
 src/
