@@ -7,7 +7,7 @@
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Kjerner/AlanForVSCode.git"
+        "url": "https://github.com/alan-platform/AlanForVSCode.git"
     },
     "engines": {
         "vscode": "^1.31.0"
