@@ -2,6 +2,8 @@
 
 Provides tasks definitions, syntax highlighting, naive support for goto/peek definition, and a tree view for Alan files.
 
+![Screenshot of the Alan extension for Visual Studio Code](./screenshot.png)
+
 ## Tasks
 
 The build and fetch tasks can be started from within a `.alan` file.

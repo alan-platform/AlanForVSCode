@@ -3,6 +3,7 @@
 deploy.sh
 node_modules
 out/
+screenshot.png
 src/
 tsconfig.json
 webpack.config.js
