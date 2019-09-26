@@ -197,15 +197,7 @@
                 "path": "./syntaxes/alan.tmLanguage"
             }
         ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "alan-explorer",
-                    "title": "Alan",
-                    "icon": "resources/Alan-inv.svg"
-                }
-            ]
-        },
+        "viewsContainers": {},
         "views": {},
         "problemMatchers": [
             {
