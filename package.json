@@ -1,8 +1,12 @@
 {
     "name": "alan",
     "displayName": "Alan",
-    "description": "",
+    "description": "Provides commands, tasks, syntax highlighting, goto/peek and an outline for Alan files.",
     "icon": "logo.png",
+    "galleryBanner": {
+        "color": "#1e1e1e",
+        "theme": "dark"
+    },
     "version": "0.4.15",
     "publisher": "Kjerner",
     "repository": {
