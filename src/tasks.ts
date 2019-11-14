@@ -234,6 +234,32 @@ async function getMigrationType(): Promise<string> {
 
 	return migration_type === migration_type_bootstrap ? '--bootstrap' : '';
 }
+class DeployItem implements vscode.QuickPickItem {
+	label: string;
+	description?: string;
+	detail?: string;
+
+	picked?: boolean;
+	alwaysShow?: boolean;
+
+	constructor(label: string, description: string, detail: string) {
+		this.label = label;
+		this.description = description;
+		this.detail = detail;
+	}
+}
+async function getDeployType(): Promise<string | undefined> {
+	const deploy_type_empty = new DeployItem('empty', 'Initialize with empty dataset', 'Use this for your first deployment or if you want to start over. This will remove all user data!');
+	const deploy_type_migrate = new DeployItem('migrate', 'Migrate from current version', 'This will migrate the data from the running version to your current application version.');
+	const deploy_type = await vscode.window.showQuickPick([
+		deploy_type_empty,
+		deploy_type_migrate
+	], {
+		placeHolder: 'data source for this deployment'
+	});
+
+	return deploy_type === undefined ? undefined : deploy_type.label;
+}
 
 export async function generateMigration(active_file: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
@@ -285,7 +311,11 @@ export async function deploy(alan_root: string, output_channel: vscode.OutputCha
 	const shell = await resolveBashShell();
 	const deploy_sh = pathToBashPath(`${alan_root}/deploy.sh`, shell);
 
-	executeCommand(`${deploy_sh}`, alan_root, shell, output_channel, diagnostics_collection);
+	const deploy_type = await getDeployType();
+
+	if (deploy_type !== undefined) {
+		executeCommand(`${deploy_sh} ${deploy_type}`, alan_root, shell, output_channel, diagnostics_collection);
+	}
 }
 
 export async function resolveRoot(file_dir: string, root_marker: string) : Promise<string> {

@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.4.16
+- choose data source during deployment (only for online Alan IDE)
+
 ## 0.4.12
 - use tab indentation for `.alan` files
 - enable tab stops by default for `.alan` files
