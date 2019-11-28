@@ -57,6 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}));
 	}
 
+	const alan_resolve_err = "Unable to resolve `alan` tool.";
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
 
@@ -74,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (context_file) {
 				tasks.generateMigration(context_file, output_channel, diagnostic_collection);
 			} else {
-				let error = 'Generate migration command failed: context alan file could not be resolved.';
+				let error = `Generate migration command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
 			}
 		}),
@@ -83,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (context_file) {
 				tasks.build(context_file, output_channel, diagnostic_collection)
 			} else {
-				let error = 'Build command failed: context alan file could not be resolved.';
+				let error = `Build command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
 			}
 		}),
@@ -92,7 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
 				let alan_root = await resolveContextRoot(taskctx, 'alan');
 				tasks.fetch(alan_root, output_channel, diagnostic_collection);
 			} catch {
-				let error = 'Fetch command failed. Unable to resolve `alan` script.';
+				let error = `Fetch command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
 			}
 		}),
