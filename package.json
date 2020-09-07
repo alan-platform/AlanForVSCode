@@ -167,10 +167,11 @@
         },
         "configurationDefaults": {
             "[alan]": {
-                "editor.autoIndent": true,
+                "editor.autoIndent": "full",
                 "editor.useTabStops": true,
                 "editor.insertSpaces": false,
-                "editor.detectIndentation": false
+                "editor.detectIndentation": false,
+                "files.trimTrailingWhitespace": true
             }
         },
         "languages": [
@@ -207,7 +208,7 @@
                 ],
                 "pattern": [
                     {
-                        "regexp": "^(.*alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)",
+                        "regexp": "^(.*alan)(?: from |:)([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)",
                         "file": 1,
                         "line": 2,
                         "column": 3,
@@ -226,12 +227,27 @@
                 ],
                 "pattern": [
                     {
-                        "regexp": "^(.*alan) at ([0-9]+):([0-9]+) (error|warning): (.*)",
+                        "regexp": "^(.*alan)(?: at |:)([0-9]+):([0-9]+) (error|warning): (.*)",
                         "file": 1,
                         "line": 2,
                         "column": 3,
                         "severity": 4,
                         "message": 5
+                    }
+                ]
+            },
+            {
+                "name": "alanc",
+                "owner": "alan",
+                "fileLocation": [
+                    "absolute"
+                ],
+                "pattern": [
+                    {
+                        "regexp": "^(.*) (error|warning): (.*)",
+                        "file": 1,
+                        "severity": 2,
+                        "message": 3
                     }
                 ]
             }
