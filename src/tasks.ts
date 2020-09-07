@@ -174,7 +174,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
                         }
                     }
 
-                    const re_other: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) (error|warning): (.*)/;
+                    const re_other: RegExp = /^((?:\/|[a-zA-Z]:).*) (error|warning): (.*)/;
                     {
                         const other_match = line.match(re_other);
                         if (other_match) {
