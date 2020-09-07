@@ -29,5 +29,6 @@
     "indentationRules": {
         "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^\\}]*|\\([^\\)]*|\\[[^\\]]*)$",
         "decreaseIndentPattern": "^((?!.*?\\/\\*).*\\*/)?\\s*[\\}\\)\\]].*$"
-    }
+    },
+    "wordPattern": "(\\d+|\\w+|'[^']+'|\"[^\"]+\")"
 }
