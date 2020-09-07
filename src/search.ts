@@ -20,13 +20,15 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const word_pattern: RegExp = /'[^']+'/;
+
 export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscode.Location[]> {
 	let {document, selection} = editor;
 
 	//Fuzzy Definition Search based on Fuzzy Definitions from Johannes Rieken
 	return fuzzyDefinitionSearch(document, selection.active, new vscode.CancellationTokenSource().token).then(locations => {
 		if (!locations || locations.length === 0) {
-			let range = document.getWordRangeAtPosition(selection.active);
+			let range = document.getWordRangeAtPosition(selection.active, word_pattern);
 			let message = range ? 'unable to find' : 'unable to find ' + document.getText(range);
 			vscode.window.setStatusBarMessage(message, 1500);
 			return;
@@ -48,7 +50,7 @@ export function showDefinitions(editor: vscode.TextEditor): Promise<void | vscod
 	});
 }
 export function fuzzyDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken) {
-	if (document.getWordRangeAtPosition(pos)) {
+	if (document.getWordRangeAtPosition(pos, word_pattern)) {
 		return Promise.all([
 			delegatingDefinitionSearch(document, pos, token),
 			alanDefinitionSearch(document, pos, token)
@@ -97,7 +99,7 @@ function dedup(locations: vscode.Location[]){
 }
 
 function delegatingDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
-	let range = document.getWordRangeAtPosition(pos);
+	let range = document.getWordRangeAtPosition(pos, word_pattern);
 	let word = document.getText(range);
 
 	return vscode.commands.executeCommand<vscode.SymbolInformation[]>('vscode.executeWorkspaceSymbolProvider', word).then(symbols => {
@@ -145,22 +147,11 @@ function findInFile(file: string, text: string, on_result: (iline: number, ichar
 
 function alanDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
 	return new Promise<vscode.Location[]>((resolve, reject) => {
-		let tmpword = document.getText(new vscode.Range(new vscode.Position(pos.line, 0), pos));
-
-		let charpos = pos.character;
-		while (charpos >= 0 && tmpword[charpos] != '\'') {
-			charpos--;
-		}
-
-		if (charpos < 0) {
-			return reject("No definition for this.");
-		}
-
-		let range = document.getWordRangeAtPosition(new vscode.Position(pos.line, charpos), /'[^']+'/);
+		let range = document.getWordRangeAtPosition(pos, word_pattern);
 		let word = document.getText(range);
 
 		if (word.length > 300) {
-			return reject("No definition for this.");
+			return reject(`No definition found for {word}.`);
 		}
 		const pattern = `\t${word}`;
 		const result: vscode.Location[] = [];
