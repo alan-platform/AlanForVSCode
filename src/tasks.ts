@@ -27,6 +27,11 @@ function bashPathsToWinPaths(string: string, shell: string) {
 	}
 	return string;
 }
+function rawLocationsToVScodeLocations(string: string) {
+	string = string.replace(/ from ([0-9]+):([0-9]+)/g, ':$1:$2');
+	string = string.replace(/ at ([0-9]+):([0-9]+)/g, ':$1:$2');
+	return string;
+}
 function exists(inode: string): Promise<boolean> {
 	return new Promise<boolean>((resolve, _reject) => {
 		fs.exists(inode, (value) => {
@@ -90,6 +95,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 		child.stdout.on('data', data => {
 			let string: string = bashPathsToWinPaths(data.toString(), shell);
 			string = stripAnsi(string);
+			string = rawLocationsToVScodeLocations(string);
 
 			output_channel.append(string);
 			output_acc += string;
@@ -98,6 +104,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 		child.stderr.on('data', data => {
 			let string: string = bashPathsToWinPaths(data.toString(), shell);
 			string = stripAnsi(string);
+			string = rawLocationsToVScodeLocations(string);
 
 			output_channel.append(string);
 			output_acc += string;
@@ -116,7 +123,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 								vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information
 					}
 
-					const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) from ([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
+					const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan):([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
                     {
                         const range_match = line.match(re_range);
                         if (range_match) {
@@ -135,7 +142,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
                         }
                     }
 
-					const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan) at ([0-9]+):([0-9]+) (error|warning): (.*)/;
+					const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan):([0-9]+):([0-9]+) (error|warning): (.*)/;
                     {
                         const locat_match = line.match(re_locat);
                         if (locat_match) {
@@ -261,14 +268,8 @@ async function getDeployType(): Promise<string | undefined> {
 	return deploy_type === undefined ? undefined : deploy_type.label;
 }
 
-export async function generateMigration(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function generateMigration(working_dir: string, alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
-
-	let active_file_dirname = src;
-	if (fs.lstatSync(src).isFile()) {
-		active_file_dirname = path.dirname(src);
-	}
-	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan_root_folder = pathToBashPath(alan_root, shell);
 
 	const name = await getMigrationName(shell, alan_root);
@@ -277,23 +278,17 @@ export async function generateMigration(src: string, output_channel: vscode.Outp
 
 	executeCommand(
 		`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${name} ${model} ${type}`,
-		active_file_dirname,
+		working_dir,
 		shell,
 		output_channel,
 		diagnostics_collection);
 }
 
-export async function build(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function build(working_dir: string, alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
-
-	let active_file_dirname = src;
-	if (fs.lstatSync(src).isFile()) {
-		active_file_dirname = path.dirname(src);
-	}
-	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
-	executeCommand(`${alan} build`, active_file_dirname, shell, output_channel, diagnostics_collection);
+	executeCommand(`${alan} build`, working_dir, shell, output_channel, diagnostics_collection);
 }
 
 export async function package_deployment(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
