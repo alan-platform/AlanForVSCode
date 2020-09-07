@@ -344,7 +344,6 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean)
 
 	try {
 		const shell = await resolveBashShell();
-		const active_file_name = vscode.window.activeTextEditor.document.uri.fsPath;
 
 		const result: vscode.Task[] = [];
 		const default_options: vscode.ShellExecutionOptions = {
@@ -375,7 +374,7 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean)
 		result.push(build_task);
 		result.push(migration_task);
 
-		if (path.basename(active_file_name) === 'connections.alan') {
+		if (vscode.window.activeTextEditor && path.basename(vscode.window.activeTextEditor.document.uri.fsPath) === 'connections.alan') {
 			const package_task = new vscode.Task({
 				'type': 'alan',
 				'task': 'package'
