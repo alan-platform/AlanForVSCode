@@ -151,7 +151,7 @@ function alanDefinitionSearch(document: vscode.TextDocument, pos: vscode.Positio
 		let word = document.getText(range);
 
 		if (word.length > 300) {
-			return reject(`No definition found for {word}.`);
+			return reject(`No definition found for ${word}.`);
 		}
 		const pattern = `\t${word}`;
 		const result: vscode.Location[] = [];
