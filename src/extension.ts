@@ -24,7 +24,7 @@ function resolveContextFile(context): string | undefined {
 	if (context && context._fsPath && pathIsFSPath(context._fsPath))
 		return context._fsPath
 
-	if (pathIsFSPath(vscode.window.activeTextEditor.document.uri.fsPath))
+	if (vscode.window.activeTextEditor && pathIsFSPath(vscode.window.activeTextEditor.document.uri.fsPath))
 		return vscode.window.activeTextEditor.document.uri.fsPath;
 
 	return undefined;
@@ -70,20 +70,20 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showErrorMessage(error);
 			}
 		}),
-		vscode.commands.registerCommand('alan.tasks.generateMigration', (taskctx) => {
-			const context_file = resolveContextFile(taskctx);
-			if (context_file) {
-				tasks.generateMigration(context_file, output_channel, diagnostic_collection);
-			} else {
+		vscode.commands.registerCommand('alan.tasks.generateMigration', async (taskctx) => {
+			try {
+				let alan_root = await resolveContextRoot(taskctx, 'alan');
+				tasks.generateMigration(alan_root, output_channel, diagnostic_collection);
+			} catch {
 				let error = `Generate migration command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
 			}
 		}),
-		vscode.commands.registerCommand('alan.tasks.build', (taskctx) => {
-			const context_file = resolveContextFile(taskctx);
-			if (context_file) {
-				tasks.build(context_file, output_channel, diagnostic_collection)
-			} else {
+		vscode.commands.registerCommand('alan.tasks.build', async (taskctx) => {
+			try {
+				let alan_root = await resolveContextRoot(taskctx, 'alan');
+				tasks.build(alan_root, output_channel, diagnostic_collection);
+			} catch {
 				let error = `Build command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
 			}

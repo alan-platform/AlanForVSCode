@@ -261,10 +261,13 @@ async function getDeployType(): Promise<string | undefined> {
 	return deploy_type === undefined ? undefined : deploy_type.label;
 }
 
-export async function generateMigration(active_file: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function generateMigration(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
 
-	const active_file_dirname = path.dirname(active_file);
+	let active_file_dirname = src;
+	if (fs.lstatSync(src).isFile()) {
+		active_file_dirname = path.dirname(src);
+	}
 	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan_root_folder = pathToBashPath(alan_root, shell);
 
@@ -283,7 +286,10 @@ export async function generateMigration(active_file: string, output_channel: vsc
 export async function build(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
 
-	const active_file_dirname = path.dirname(src);
+	let active_file_dirname = src;
+	if (fs.lstatSync(src).isFile()) {
+		active_file_dirname = path.dirname(src);
+	}
 	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 	const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
