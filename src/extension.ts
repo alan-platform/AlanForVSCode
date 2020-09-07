@@ -142,16 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 	build_statusbar_item.command = 'alan.tasks.build';
 	build_statusbar_item.text = 'Alan Build';
 	build_statusbar_item.show();
-	context.subscriptions.push(
-		build_statusbar_item,
-		vscode.window.onDidChangeActiveTextEditor(() => {
-			if (vscode.window.activeTextEditor.document.languageId === 'alan') {
-				build_statusbar_item.show();
-			} else {
-				build_statusbar_item.hide();
-			}
-		})
-	);
+	context.subscriptions.push(build_statusbar_item);
 
 	if (is_alan_deploy_supported) {
 		let deploy_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 2);
