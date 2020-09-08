@@ -171,7 +171,12 @@
                 "editor.useTabStops": true,
                 "editor.insertSpaces": false,
                 "editor.detectIndentation": false,
-                "files.trimTrailingWhitespace": true
+                "files.trimTrailingWhitespace": true,
+                "editor.quickSuggestions": {
+                    "other": true,
+                    "strings": true
+                },
+                "editor.suggest.insertMode": "replace"
             }
         },
         "languages": [
@@ -233,21 +238,6 @@
                         "column": 3,
                         "severity": 4,
                         "message": 5
-                    }
-                ]
-            },
-            {
-                "name": "alanc",
-                "owner": "alan",
-                "fileLocation": [
-                    "absolute"
-                ],
-                "pattern": [
-                    {
-                        "regexp": "^(.*) (error|warning): (.*)",
-                        "file": 1,
-                        "severity": 2,
-                        "message": 3
                     }
                 ]
             }
