@@ -150,7 +150,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 		vscode.languages.registerCompletionItemProvider('alan', {
 			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-				const linePrefix = document.lineAt(position).text.substr(0, position.character);
+				const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
+				if (!wrange)
+					return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
 
 				return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
 					let result:Map<string, vscode.CompletionItem> = new Map();
@@ -209,7 +211,7 @@ export function activate(context: vscode.ExtensionContext) {
 								item.insertText = `'${sym.name}'`;
 								item.filterText = `'${sym.name}'`;
 								item.detail = sym.detail;
-								item.range = document.getWordRangeAtPosition(position, /'[^']*'/);
+								item.range = wrange;
 								result.set(sym.name, item);
 							}
 							flatten(sym.children);

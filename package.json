@@ -172,6 +172,7 @@
                 "editor.insertSpaces": false,
                 "editor.detectIndentation": false,
                 "files.trimTrailingWhitespace": true,
+                "editor.wordBasedSuggestions": true,
                 "editor.quickSuggestions": {
                     "other": true,
                     "strings": true
