@@ -194,6 +194,8 @@ export function activate(context: vscode.ExtensionContext) {
 										return vscode.CompletionItemKind.Struct;
 									case vscode.SymbolKind.EnumMember:
 										return vscode.CompletionItemKind.EnumMember;
+									default:
+										return vscode.CompletionItemKind.Struct;
 									}
 							}
 							const existing_citem = result[sym.name];
