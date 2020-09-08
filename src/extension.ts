@@ -146,7 +146,67 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 
-		vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, symbol_provider)
+		vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, symbol_provider),
+
+		vscode.languages.registerCompletionItemProvider('alan', {
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
+				const linePrefix = document.lineAt(position).text.substr(0, position.character);
+
+				return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
+					function flatten(symvs: vscode.DocumentSymbol[]) {
+						return symvs.reduce((result, sym) => {
+							function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
+								switch (kind) {
+									case vscode.SymbolKind.File:
+										return vscode.CompletionItemKind.File;
+									case vscode.SymbolKind.Module:
+										return vscode.CompletionItemKind.Module;
+									case vscode.SymbolKind.Namespace:
+										return vscode.CompletionItemKind.Module;
+									case vscode.SymbolKind.Class:
+										return vscode.CompletionItemKind.Class;
+									case vscode.SymbolKind.Method:
+										return vscode.CompletionItemKind.Method;
+									case vscode.SymbolKind.Enum:
+										return vscode.CompletionItemKind.Enum;
+									case vscode.SymbolKind.Interface:
+										return vscode.CompletionItemKind.Interface;
+									case vscode.SymbolKind.Function:
+										return vscode.CompletionItemKind.Function;
+									case vscode.SymbolKind.Variable:
+										return vscode.CompletionItemKind.Variable;
+									case vscode.SymbolKind.Constant:
+										return vscode.CompletionItemKind.Constant;
+									case vscode.SymbolKind.String:
+										return vscode.CompletionItemKind.Text;
+									case vscode.SymbolKind.Number:
+										return vscode.CompletionItemKind.Constant;
+									case vscode.SymbolKind.Array:
+										return vscode.CompletionItemKind.Class;
+									case vscode.SymbolKind.Event:
+										return vscode.CompletionItemKind.Event;
+									case vscode.SymbolKind.Operator:
+										return vscode.CompletionItemKind.Operator;
+									case vscode.SymbolKind.TypeParameter:
+										return vscode.CompletionItemKind.TypeParameter;
+									case vscode.SymbolKind.Struct:
+										return vscode.CompletionItemKind.Struct;
+									case vscode.SymbolKind.EnumMember:
+										return vscode.CompletionItemKind.EnumMember;
+									}
+							}
+							let item = new vscode.CompletionItem(sym.name, mapSymbolKind2CompletionItemKind(sym.kind));
+							item.insertText = `'${sym.name}'`;
+							item.filterText = `'${sym.name}'`;
+							result.push(item);
+							return result.concat(flatten(sym.children));
+						}, []);
+					}
+
+					return flatten(symbols);
+				});
+			}
+		}, '\'')
 	);
 
 	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);
