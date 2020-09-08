@@ -196,7 +196,7 @@ export function activate(context: vscode.ExtensionContext) {
 										return vscode.CompletionItemKind.EnumMember;
 									default:
 										return vscode.CompletionItemKind.Struct;
-									}
+								}
 							}
 							const existing_citem = result[sym.name];
 							const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
