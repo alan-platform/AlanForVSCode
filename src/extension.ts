@@ -209,6 +209,7 @@ export function activate(context: vscode.ExtensionContext) {
 								item.insertText = `'${sym.name}'`;
 								item.filterText = `'${sym.name}'`;
 								item.detail = sym.detail;
+								item.range = document.getWordRangeAtPosition(position, /'[^']*'/);
 								result.set(sym.name, item);
 							}
 							flatten(sym.children);
