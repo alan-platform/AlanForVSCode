@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.4.17
+- support running 'Alan: Build' and 'Alan: Generate Migration' when no alan file is active
+- add single quoted string (identifier) completions
+- proper word ranges for highlighting qouted strings
+- fix matching word in definition search
+- convert links in output to hyperlinks with line/column
+- whitespace trimming enabled by default
+- missing keywords added
+
 ## 0.4.16
 - choose data source during deployment (only for online Alan IDE)
 
