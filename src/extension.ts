@@ -153,8 +153,9 @@ export function activate(context: vscode.ExtensionContext) {
 				const linePrefix = document.lineAt(position).text.substr(0, position.character);
 
 				return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
+					let result:Map<string, vscode.CompletionItem> = new Map();
 					function flatten(symvs: vscode.DocumentSymbol[]) {
-						return symvs.reduce((result, sym) => {
+						symvs.forEach(sym => {
 							function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
 								switch (kind) {
 									case vscode.SymbolKind.File:
@@ -182,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
 									case vscode.SymbolKind.Number:
 										return vscode.CompletionItemKind.Constant;
 									case vscode.SymbolKind.Array:
-										return vscode.CompletionItemKind.Class;
+										return vscode.CompletionItemKind.Property;
 									case vscode.SymbolKind.Event:
 										return vscode.CompletionItemKind.Event;
 									case vscode.SymbolKind.Operator:
@@ -195,15 +196,25 @@ export function activate(context: vscode.ExtensionContext) {
 										return vscode.CompletionItemKind.EnumMember;
 									}
 							}
-							let item = new vscode.CompletionItem(sym.name, mapSymbolKind2CompletionItemKind(sym.kind));
-							item.insertText = `'${sym.name}'`;
-							item.filterText = `'${sym.name}'`;
-							result.push(item);
-							return result.concat(flatten(sym.children));
-						}, []);
+							const existing_citem = result[sym.name];
+							const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
+							if (existing_citem && existing_citem.kind === ckind) {
+								//skip
+							} else if (existing_citem && existing_citem.kind === vscode.CompletionItemKind.Struct) {
+								existing_citem.kind = ckind;
+							} else {
+								let item = new vscode.CompletionItem(sym.name, ckind);
+								item.insertText = `'${sym.name}'`;
+								item.filterText = `'${sym.name}'`;
+								item.detail = sym.detail;
+								result.set(sym.name, item);
+							}
+							flatten(sym.children);
+						});
 					}
 
-					return flatten(symbols);
+					flatten(symbols);
+					return Array.from(result.values());
 				});
 			}
 		}, '\'')
