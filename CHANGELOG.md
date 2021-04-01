@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.4.18
+- update TextMate grammar for new platform version
+
 ## 0.4.17
 - support running 'Alan: Build' and 'Alan: Generate Migration' when no alan file is active
 - add single quoted string (identifier) completions
