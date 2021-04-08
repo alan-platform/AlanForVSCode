@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as proc from 'child_process';
-import * as sanitize from 'sanitize-filename';
+import sanitize from 'sanitize-filename';
 
 const wsl = 'C:\\Windows\\System32\\wsl.exe';
 const wsl_bash = 'C:\\Windows\\System32\\bash.exe';
