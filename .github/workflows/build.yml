@@ -15,6 +15,8 @@ jobs:
       with:
         node-version: '12'
     - run: npm ci
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: tsc
       run: |
         npx tsc -p .
