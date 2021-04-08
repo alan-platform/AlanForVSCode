@@ -1,0 +1,38 @@
+name: Publish
+on:
+  push:
+    branches:
+      - release
+    tags-ignore:
+      - 'published/*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '12'
+    - run: npm ci
+    - name: tsc
+      run: |
+        npx tsc -p .
+        npx vsce package
+    - name: publish
+      run: |
+        npx vsce publish -p $VSCE_TOKEN --packagePath *.vsix
+      env:
+        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+    - name: Set VERSION & VERSION_TAG
+      run: |
+        VERSION=$(jq -j '.version' < ./src/package.json)
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+        echo "VERSION_TAG=published/${VERSION}" >> $GITHUB_ENV
+    - uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        commitish: ${{ github.ref }}
+        tag_name: ${{ env.VERSION_TAG }}
+        release_name: Alan for Visual Studio Code v${{ env.VERSION }}
