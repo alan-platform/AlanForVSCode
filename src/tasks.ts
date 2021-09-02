@@ -12,6 +12,11 @@ const git_bash_x64 = 'C:\\Program Files\\Git\\bin\\bash.exe';
 const git_bash_x32 = 'C:\\Program Files (x86)\\Git\\bin\\bash.exe';
 const linux_osx_bash = '/bin/bash';
 
+export const deploymentPackagingContexts = {
+	"connections.alan": "platform <= 2021.10",
+	"deployment.alan": "platform >= 2021.8"
+}
+
 function isWsl(shell: string) {
 	return shell == wsl_bash;
 }
@@ -374,7 +379,7 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean)
 		result.push(build_task);
 		result.push(migration_task);
 
-		if (vscode.window.activeTextEditor && path.basename(vscode.window.activeTextEditor.document.uri.fsPath) === 'connections.alan') {
+		if (vscode.window.activeTextEditor && deploymentPackagingContexts[path.basename(vscode.window.activeTextEditor.document.uri.fsPath)] !== undefined) {
 			const package_task = new vscode.Task({
 				'type': 'alan',
 				'task': 'package'

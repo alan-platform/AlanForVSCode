@@ -8,10 +8,10 @@ import {AlanSymbolProvider} from './symbols'
 
 function isAlanDeploySupported() : boolean {
 	if (process.env.CONTAINER_NAME && process.env.DEPLOY_HOST && process.env.DEPLOY_PORT) {
-		vscode.commands.executeCommand('setContext', 'isAlanDeploySupported', true);
+		vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', true);
 		return true;
 	} else {
-		vscode.commands.executeCommand('setContext', 'isAlanDeploySupported', false);
+		vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
 		return false;
 	}
 }
@@ -59,13 +59,16 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 }
 
 export function deactivate(context: vscode.ExtensionContext) {
-	vscode.commands.executeCommand('setContext', 'isAlanDeploySupported', false);
+	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
 }
 export function activate(context: vscode.ExtensionContext) {
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
 	const output_channel = vscode.window.createOutputChannel('Alan');
 	const is_alan_deploy_supported: boolean = isAlanDeploySupported();
 	const symbol_provider = new AlanSymbolProvider();
+
+	/* set contexts for the Alan Package command */
+	vscode.commands.executeCommand('setContext', 'alan.deploymentPackagingContexts', tasks.deploymentPackagingContexts);
 
 	// pretend to be a definition provider
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {

@@ -56,11 +56,11 @@
                     "command": "alan.tasks.fetch"
                 },
                 {
-                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "when": "resourceLangId == alan && resourceFilename in alan.deploymentPackagingContexts",
                     "command": "alan.tasks.package"
                 },
                 {
-                    "when": "isAlanDeploySupported",
+                    "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
                 }
             ],
@@ -72,11 +72,11 @@
                     "command": "alan.tasks.fetch"
                 },
                 {
-                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "when": "resourceLangId == alan && resourceFilename in alan.deploymentPackagingContexts",
                     "command": "alan.tasks.package"
                 },
                 {
-                    "when": "isAlanDeploySupported",
+                    "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
                 }
             ],
@@ -88,11 +88,11 @@
                     "command": "alan.tasks.fetch"
                 },
                 {
-                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "when": "resourceLangId == alan && resourceFilename in alan.deploymentPackagingContexts",
                     "command": "alan.tasks.package"
                 },
                 {
-                    "when": "isAlanDeploySupported",
+                    "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
                 }
             ],
@@ -104,14 +104,14 @@
                     "command": "alan.tasks.generateMigration"
                 },
                 {
-                    "when": "resourceLangId == alan && resourceFilename == connections.alan",
+                    "when": "resourceLangId == alan && resourceFilename in alan.deploymentPackagingContexts",
                     "command": "alan.tasks.package"
                 },
                 {
                     "command": "alan.tasks.fetch"
                 },
                 {
-                    "when": "isAlanDeploySupported",
+                    "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
                 },
                 {
@@ -250,11 +250,11 @@
         "watch": "webpack --mode none --watch"
     },
     "devDependencies": {
-        "@types/node": "^10.14.6",
+        "@types/node": "^10.17.60",
         "@types/vscode": "^1.31.0",
         "ts-loader": "^6.0.0",
         "typescript": "^3.3.3",
-        "vsce": "^1.64.0",
+        "vsce": "^1.96.3",
         "webpack": "^4.30.0",
         "webpack-cli": "^3.3.12"
     },
