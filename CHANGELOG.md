@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.4.19
+- support Alan platform versions >= 2021.8
+
 ## 0.4.18
 - update TextMate grammar for new platform version
 

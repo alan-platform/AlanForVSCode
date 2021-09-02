@@ -224,14 +224,48 @@ async function getMigrationName(shell: string, alan_root: string): Promise<strin
 }
 async function getMigrationModel(shell: string, alan_root: string): Promise<string> {
 	return new Promise(resolve => {
-		const systems_dirs = fs.readdirSync(path.join(alan_root, 'systems'))
-			.map(system => path.join(system, 'model.lib.link'))
-			.filter(modellib => fs.existsSync(path.join(alan_root, 'systems', modellib)));
+		let models = [];
+		let model_path:((model:string) => string);
 
-		vscode.window.showQuickPick(systems_dirs, {
+		if (fs.existsSync(path.join(alan_root, 'models'))) { //platform >= 2021.8
+			// NOTE: in order to use models directly, we need to update generate_migration.sh,
+			// which relies on model.link files. Use the following code when we can:
+			// model_path = (model) => `${alan_root}/.alan/devenv/output/objects/models/${model}/package`;
+			// models = fs.readdirSync(path.join(alan_root, 'models'));
+
+			// legacy approach, for now:
+			model_path = (model) => `${alan_root}/systems/${model}`;
+			models = fs.readdirSync(path.join(alan_root, 'systems'))
+				.map(system => path.join(system, 'model.link'))
+				.filter(modellib => fs.existsSync(path.join(alan_root, 'systems', modellib)));
+		} else {  //platform < 2021.8
+			model_path = (model) => `${alan_root}/systems/${model}`;
+			models = fs.readdirSync(path.join(alan_root, 'systems'))
+				.map(system => path.join(system, 'model.lib.link'))
+				.filter(modellib => fs.existsSync(path.join(alan_root, 'systems', modellib)));
+		}
+
+		if (models.length <= 0) {
+			let error = `Unable to resolve a 'systems/**/model.link' file,`
+				+ ` which is required for generating a migration (or a 'model.lib.link'`
+				+ ` file for platform version < 2021.8). Make sure that you have a`
+				+ ` system to migrate from, and that you have run Alan Build.`
+			vscode.window.showErrorMessage(error);
+			return;
+		}
+
+		vscode.window.showQuickPick(models, {
 			placeHolder: 'migration target model'
 		}).then(migration_model => {
-			resolve(pathToBashPath(`${alan_root}/systems/${migration_model}`, shell));
+			const model_file = model_path(migration_model);
+			fs.access(model_file, (err) => {
+				if (err) {
+					vscode.window.showErrorMessage(`Please run Alan Build to compile model '${migration_model}' first.`);
+				}
+				else {
+					resolve(pathToBashPath(model_file, shell));
+				}
+			});
 		});
 	});
 }
