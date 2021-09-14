@@ -7,7 +7,7 @@
         "color": "#1e1e1e",
         "theme": "dark"
     },
-    "version": "0.4.19",
+    "version": "0.4.20",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -62,6 +62,10 @@
                 {
                     "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
+                },
+                {
+                    "when": "alan.isAlanAppURLProvided",
+                    "command": "alan.tasks.show"
                 }
             ],
             "editor/title/context": [
@@ -78,6 +82,10 @@
                 {
                     "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
+                },
+                {
+                    "when": "alan.isAlanAppURLProvided",
+                    "command": "alan.tasks.show"
                 }
             ],
             "explorer/context": [
@@ -94,6 +102,10 @@
                 {
                     "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
+                },
+                {
+                    "when": "alan.isAlanAppURLProvided",
+                    "command": "alan.tasks.show"
                 }
             ],
             "commandPalette": [
@@ -113,6 +125,10 @@
                 {
                     "when": "alan.isAlanDeploySupported",
                     "command": "alan.tasks.deploy"
+                },
+                {
+                    "when": "alan.isAlanAppURLProvided",
+                    "command": "alan.tasks.show"
                 },
                 {
                     "when": "resourceLangId == alan",
@@ -140,6 +156,10 @@
             {
                 "command": "alan.tasks.deploy",
                 "title": "Alan: Deploy"
+            },
+            {
+                "command": "alan.tasks.show",
+                "title": "Alan: Show App"
             },
             {
                 "command": "alan.editor.showDefinitions",

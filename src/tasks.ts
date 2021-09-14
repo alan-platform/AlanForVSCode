@@ -358,6 +358,10 @@ export async function deploy(alan_root: string, output_channel: vscode.OutputCha
 	}
 }
 
+export async function show() {
+	vscode.env.openExternal(vscode.Uri.parse(process.env.ALAN_APP_URL));
+}
+
 export async function resolveRoot(file_dir: string, root_marker: string) : Promise<string> {
 	const {root} = path.parse(file_dir);
 
@@ -377,7 +381,7 @@ export async function resolveRoot(file_dir: string, root_marker: string) : Promi
 	});
 }
 
-export async function getTasksList(alan_root: string, deploy_supported: boolean): Promise<vscode.Task[]> {
+export async function getTasksList(alan_root: string, deploy_supported: boolean, show_supported: boolean): Promise<vscode.Task[]> {
 	const workspace_root = vscode.workspace.rootPath;
 	if (!workspace_root) return [];
 
@@ -427,6 +431,15 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean)
 				'type': 'alan',
 				'task': 'deploy'
 			}, 'deploy', 'alan', new vscode.ShellExecution('${command:alan.tasks.deploy}', default_options), no_problem_matchers);
+			deploy_task.group = vscode.TaskGroup.Test;
+			result.push(deploy_task);
+		}
+
+		if (show_supported) {
+			const deploy_task = new vscode.Task({
+				'type': 'alan',
+				'task': 'show'
+			}, 'deploy', 'alan', new vscode.ShellExecution('${command:alan.tasks.show}', default_options), no_problem_matchers);
 			deploy_task.group = vscode.TaskGroup.Test;
 			result.push(deploy_task);
 		}

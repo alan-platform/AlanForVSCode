@@ -7,11 +7,17 @@ import {showDefinitions, fuzzyDefinitionSearch} from './search';
 import {AlanSymbolProvider} from './symbols'
 
 function isAlanDeploySupported() : boolean {
-	if (process.env.CONTAINER_NAME && process.env.DEPLOY_HOST && process.env.DEPLOY_PORT) {
-		vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', true);
+	if (process.env.ALAN_CONTAINER_NAME) {
 		return true;
 	} else {
-		vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
+		return false;
+	}
+}
+
+function isAlanAppURLProvided() : boolean {
+	if (process.env.ALAN_APP_URL) {
+		return true;
+	} else {
 		return false;
 	}
 }
@@ -60,11 +66,18 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 
 export function deactivate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
+	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', false);
 }
 export function activate(context: vscode.ExtensionContext) {
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
 	const output_channel = vscode.window.createOutputChannel('Alan');
+
 	const is_alan_deploy_supported: boolean = isAlanDeploySupported();
+	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', is_alan_deploy_supported);
+
+	const is_alan_appurl_provided: boolean = isAlanAppURLProvided();
+	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', is_alan_appurl_provided);
+
 	const symbol_provider = new AlanSymbolProvider();
 
 	/* set contexts for the Alan Package command */
@@ -120,11 +133,14 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.deploy', async (taskctx) => {
 			try {
 				let alan_root = await resolveContextRoot(taskctx, 'deploy.sh');
-				tasks.deploy(alan_root, output_channel, diagnostic_collection)
+				tasks.deploy(alan_root, output_channel, diagnostic_collection);
 			} catch {
 				let error = 'Deploy command failed. Unable to resolve `deploy.sh` script.';
 				vscode.window.showErrorMessage(error);
 			}
+		}),
+		vscode.commands.registerCommand('alan.tasks.show', async (taskctx) => {
+			tasks.show();
 		}),
 
 		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
@@ -134,7 +150,7 @@ export function activate(context: vscode.ExtensionContext) {
 			provideTasks: async function () {
 				try { // alan projects
 					let alan_root = await resolveContextRoot(undefined, 'alan');
-					return tasks.getTasksList(alan_root, is_alan_deploy_supported);
+					return tasks.getTasksList(alan_root, is_alan_deploy_supported, is_alan_appurl_provided);
 				} catch {
 					try { // alan dev/meta projects
 						let alan_root = await resolveContextRoot(undefined, 'project.json');
@@ -228,13 +244,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}, '\'')
 	);
 
-	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);
+	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 4);
 	fetch_statusbar_item.command = 'alan.tasks.fetch';
 	fetch_statusbar_item.text = 'Alan Fetch';
 	fetch_statusbar_item.show();
 	context.subscriptions.push(fetch_statusbar_item);
 
-	const build_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
+	const build_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);
 	build_statusbar_item.command = 'alan.tasks.build';
 	build_statusbar_item.text = 'Alan Build';
 	build_statusbar_item.show();
@@ -246,5 +262,13 @@ export function activate(context: vscode.ExtensionContext) {
 		deploy_statusbar_item.text = 'Alan Deploy';
 		deploy_statusbar_item.show();
 		context.subscriptions.push(deploy_statusbar_item);
+	}
+
+	if (is_alan_appurl_provided) {
+		let show_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
+		show_statusbar_item.command = 'alan.tasks.show';
+		show_statusbar_item.text = '$(browser) Alan Show';
+		show_statusbar_item.show();
+		context.subscriptions.push(show_statusbar_item);
 	}
 }
