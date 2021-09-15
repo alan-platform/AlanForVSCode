@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.4.21
+- improve snippets
+
 ## 0.4.20
 - show `Alan Show` button when `ALAN_APP_URL` is set
 - show `Alan Deploy` button when `ALAN_CONTAINER_NAME` is set

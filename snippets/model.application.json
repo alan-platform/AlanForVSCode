@@ -1,74 +1,121 @@
 {
 	"collection": {
-		"prefix": "collection",
+		"prefix": ": collection",
 		"fileMatch": "application.alan",
 		"body": [
-			"'${1:name}': collection ['${2:key name}'] {",
-			"\t'${2:key name}': text",
-			"\t${0}",
+			": collection ['${1:<key name>}'] {",
+			"\t'${1:<key name>}': text${0}",
 			"}"
 		],
-		"description": "collection property (model.application language)"
+		"description": "collection (model.application/interface.interface language)"
 	},
 	"stategroup": {
-		"prefix": "stategroup",
+		"prefix": ": stategroup",
 		"scope": "alan",
 		"body": [
-			"'${1:name}': stategroup (",
-			"\t'${2:state name}' -> { $0}",
-			"\t'${3:state name}' -> { }",
+			": stategroup (",
+			"\t'${2:<state name>}' { $0}",
+			"\t'${3:<state name>}' { }",
 			")"
 		],
-		"description": "state group property (model.application language)"
+		"description": "state group (model.application/interface.interface language)"
 	},
-	"integer": {
-		"prefix": "integer",
+	"number": {
+		"prefix": ": number",
 		"scope": "alan",
 		"body": [
-			"'${1:name}': integer '${2:numerical type}'${0}"
+			": number '${2:<numerical type>}'${0}"
 		],
-		"description": "integer property (model.application language)"
+		"description": "number (model.application/interface.interface language)"
 	},
-	"natural": {
-		"prefix": "natural",
+	"positive number": {
+		"prefix": ": number positive",
 		"scope": "alan",
 		"body": [
-			"'${1:name}': natural '${2:numerical type}'${0}"
+			": number positive '${2:<numerical type>}'${0}"
 		],
-		"description": "natural number property (model.application language)"
+		"description": "positive number (model.application/interface.interface language)"
 	},
 	"text": {
-		"prefix": "text",
+		"prefix": ": text",
 		"scope": "alan",
 		"body": [
-			"'${0:name}': text"
+			": text"
 		],
-		"description": "text property (model.application language)"
+		"description": "text (model.application/interface.interface language)"
 	},
-	"text-with-constraint": {
-		"prefix": "text-with-constraint",
+	"file": {
+		"prefix": ": file",
 		"scope": "alan",
 		"body": [
-			"'${1:name}': text -> ${0}"
+			": file"
 		],
-		"description": "text property with constraint (model.application language)"
+		"description": "file (model.application/interface.interface language)"
+	},
+	"text with mandatory reference": {
+		"prefix": ": text ->",
+		"scope": "alan",
+		"body": [
+			": text -> ${1:<path to collection>}[]${0}"
+		],
+		"description": "text with mandatory reference (model.application/interface.interface language)"
+	},
+	"text with optional reference": {
+		"prefix": ": text ~>",
+		"scope": "alan",
+		"body": [
+			": text ~> ${1:<path to collection>}[]${0}"
+		],
+		"description": "text with optional reference (model.application/interface.interface language)"
 	},
 	"group": {
-		"prefix": "group",
+		"prefix": ": group",
 		"scope": "alan",
 		"body": [
-			"'${1:name}': group {",
+			": group {",
 			"\t$0",
 			"}"
 		],
-		"description": "group property (model.application language)"
+		"description": "group (model.application/interface.interface language)"
 	},
 	"reference-set": {
-		"prefix": "reference-set",
+		"prefix": ": reference-set",
 		"scope": "alan",
 		"body": [
-			"'${1:name}': reference-set -> ${2:<node type path>} => inverse >'${3:reference to invert}'${0}"
+			": reference-set -> ${2:<node path>} = inverse ${3:<reference to invert>}${0}"
 		],
-		"description": "reference-set property (model.application language)"
+		"description": "reference-set (model.application/interface.interface language)"
+	},
+	"mandatory where-rule": {
+		"prefix": "where '...' ->",
+		"scope": "alan",
+		"body": [
+			"where '${1:<rule name>}' -> ${2:<node path>}${0}"
+		],
+		"description": "mandatory where-rule (model.application/interface.interface language)"
+	},
+	"optional where-rule": {
+		"prefix": "where '...' ~>",
+		"scope": "alan",
+		"body": [
+			"where '${1:<rule name>}' ~> ${2:<node path>}${0}"
+		],
+		"description": "optional where-rule (model.application/interface.interface language)"
+	},
+	"command": {
+		"prefix": ": command",
+		"scope": "alan",
+		"body": [
+			": command { ${0}} => "
+		],
+		"description": "command (model.application/interface.interface language)"
+	},
+	"action": {
+		"prefix": ": action",
+		"scope": "alan",
+		"body": [
+			": action { ${0}} => "
+		],
+		"description": "action (model.application language)"
 	}
 }
