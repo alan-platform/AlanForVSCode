@@ -9,4 +9,4 @@ Provides commands, task definitions, syntax highlighting, naive support for goto
 The build and fetch tasks can be started from within a `.alan` file.
 The extension resolves the nearest `alan` script for the current file, so you can work on multiple projects in a single workspace.
 
-Running the package task requires opening the `connections.alan` file of the deployment that you want to package.
+Running the package task requires opening the `deployment.alan` file of the deployment that you want to package.
