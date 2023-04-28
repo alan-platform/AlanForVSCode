@@ -413,6 +413,27 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean,
 		}, 'generate migration', 'alan', new vscode.ShellExecution('${command:alan.tasks.generateMigration}', default_options), no_problem_matchers);
 		migration_task.group = vscode.TaskGroup.Clean; //??
 
+		const shell_task = new vscode.Task(
+			{
+				'type': 'alan',
+				'task': 'shell'
+			},
+			vscode.TaskScope.Workspace,
+			'script',
+			'alan',
+			new vscode.ShellExecution('${task:command}', {}),
+			// new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
+			// 	let cmd = "";
+			// 	return ;
+			// 	// return executeCommand(`${cmd}`, alan_root, shell, output_channel, diagnostics_collection);
+
+			// 	// return new CustomBuildTaskTerminal(this.workspaceRoot, flavor, flags, () => this.sharedState, (state: string) => this.sharedState = state);
+			// })),
+			no_problem_matchers
+		);
+		fetch_task.group = vscode.TaskGroup.Build;
+
+		result.push(shell_task);
 		result.push(fetch_task);
 		result.push(build_task);
 		result.push(migration_task);
@@ -450,7 +471,10 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean,
 	}
 }
 
-
+export async function scriptDev(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection, cmd: string, cwd: string) {
+	const shell = await resolveBashShell();
+	executeCommand(`${cmd}`, cwd, shell, output_channel, diagnostics_collection);
+}
 export async function buildDev(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
 

@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as tasks from './tasks';
+import * as fs from 'fs';
 import {showDefinitions, fuzzyDefinitionSearch} from './search';
 import {AlanSymbolProvider} from './symbols'
 
@@ -91,6 +92,9 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	const alan_resolve_err = "Unable to resolve `alan` tool.";
+	let glob_script_args = {
+		cmd: ""
+	};
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
 
@@ -142,7 +146,9 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.show', async (taskctx) => {
 			tasks.show();
 		}),
-
+		vscode.commands.registerCommand('alan.dev.tasks.script', async (taskctx) => {
+			tasks.scriptDev(output_channel, diagnostic_collection, glob_script_args.cmd, taskctx[1]);
+		}),
 		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
 		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
 
@@ -161,6 +167,54 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			},
 			resolveTask(task: vscode.Task): vscode.Task | undefined {
+				return undefined;
+			}
+		}),
+
+		vscode.tasks.registerTaskProvider('alan-script', {
+			provideTasks: async function () {
+				return [
+					new vscode.Task(
+						{
+							'type': 'alan-script',
+							'task': 'shell',
+							'command': `./test.sh`
+						},
+						vscode.TaskScope.Workspace,
+						'script',
+						'alan',
+						new vscode.ShellExecution(`./test.sh`, {}),
+						[]
+					)
+				];
+				// const tasks = await fs.promises
+				// 	.readdir(this.workspaceRoot)
+				// 	.then(files =>
+				// 		files.filter(f => path.extname(f) == ".sh").map(f => new vscode.Task(
+				// 			{
+				// 				'type': 'alan-script',
+				// 				'task': 'shell',
+				// 				'command': `./${f}`
+				// 			},
+				// 			vscode.TaskScope.Workspace,
+				// 			'script',
+				// 			'alan',
+				// 			new vscode.ShellExecution(`./${f}`, {}),
+				// 			[]
+				// 		)));
+				// return tasks;
+			},
+			resolveTask(_task: vscode.Task): vscode.Task | undefined {
+				const cmd = (<any>_task.definition).command;
+				glob_script_args.cmd = cmd;
+				return new vscode.Task(
+					_task.definition,
+					vscode.TaskScope.Workspace,
+					'test-trans',
+					'alan',
+					new vscode.ShellExecution('${command:alan.dev.tasks.script}', {}),
+					[]
+				);
 				return undefined;
 			}
 		}),
