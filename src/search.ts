@@ -19,6 +19,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
+import * as stream from 'stream';
+import { rejects } from 'assert';
 
 const word_pattern: RegExp = /'[^']+'/;
 
@@ -135,14 +138,23 @@ function findFiles(base: string, ext: string, files: (string[]|undefined), resul
     return result
 }
 
-function findInFile(file: string, text: string, on_result: (iline: number, icharacter: number) => void) {
-	let lines = fs.readFileSync(file).toString().split("\n");
-	lines.forEach((line: string, iline: number) => {
-		const character = line.indexOf(text);
-		if (character !== -1) {
-			on_result(iline, character);
-		}
-	});
+const searchStream = async (file: string, re:RegExp) => {
+    return new Promise((resolve) => {
+        const inStream = fs.createReadStream(file);
+        const rl = readline.createInterface(inStream, process.stdout);
+        const result = [];
+		let iline = 0;
+        rl.on('line', function (line) {
+			const char = line.search(re);
+            if (line && char >= 0) {
+				result.push([file, iline, char]);
+            }
+			++iline;
+        });
+        rl.on('close', function () {
+            resolve(result);
+        });
+    });
 }
 
 function alanDefinitionSearch(document: vscode.TextDocument, pos: vscode.Position, token: vscode.CancellationToken): PromiseLike<vscode.Location[]> {
@@ -153,19 +165,21 @@ function alanDefinitionSearch(document: vscode.TextDocument, pos: vscode.Positio
 		if (word.length > 300) {
 			return reject(`No definition found for ${word}.`);
 		}
-		const pattern = `\t${word}`;
-		const result: vscode.Location[] = [];
-
+		const pattern = new RegExp(`(?<=^[\t]*)(${word})|(?<=let \\\$)(${word})`, "");
 		const files: string[] = findFiles(vscode.workspace.rootPath, path.extname(document.fileName), undefined, undefined);
-		files.forEach((file) => {
-			let lastUri: vscode.Uri = vscode.Uri.file(file);
-			findInFile(file, pattern, (line, character) => {
-				range = new vscode.Range(line, character + 1, line, character + word.length + 1);
-				if (lastUri.toString() !== document.uri.toString() || !range.contains(pos)) {
-					result.push(new vscode.Location(lastUri, range));
-				}
+
+		Promise
+			.all(files.map((file) => searchStream(file, pattern)))
+			.then((res: Array<Array<[string, number, number]>>)=> {
+				const result: vscode.Location[] = [];
+				res.reduce((prev, curr) => prev.concat(curr), []).forEach(([file, line, character]) => {
+					let range = new vscode.Range(line, character, line, character + word.length);
+					let lastUri: vscode.Uri = vscode.Uri.file(file);
+					if (lastUri.toString() !== document.uri.toString() || !range.contains(pos)) {
+						result.push(new vscode.Location(lastUri, range));
+					}
+				});
+				resolve(result);
 			});
-		});
-		resolve(result);
 	});
 }
