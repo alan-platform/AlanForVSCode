@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.4.22
+- find `generate_migration.sh` script depending on platform version
+
 ## 0.4.21
 - improve snippets
 

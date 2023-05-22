@@ -315,12 +315,22 @@ export async function generateMigration(working_dir: string, alan_root: string, 
 	const model = await getMigrationModel(shell, alan_root);
 	const type = await getMigrationType();
 
-	executeCommand(
-		`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh ${name} ${model} ${type}`,
-		working_dir,
-		shell,
-		output_channel,
-		diagnostics_collection);
+	const script_paths = [
+		`${alan_root_folder}/.alan/devenv/system-types/datastore/scripts/generate_migration.sh`,
+		`${alan_root_folder}/.alan/dataenv/system-types/datastore/scripts/generate_migration.sh`
+	];
+
+	for (const script_path of script_paths) {
+		if (await exists(script_path)) {
+			executeCommand(
+				`${script_path} ${name} ${model} ${type}`,
+				working_dir,
+				shell,
+				output_channel,
+				diagnostics_collection);
+			break;
+		}
+	}
 }
 
 export async function build(working_dir: string, alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
