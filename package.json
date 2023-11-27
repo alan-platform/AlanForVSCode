@@ -7,7 +7,7 @@
         "color": "#1e1e1e",
         "theme": "dark"
     },
-    "version": "0.4.22",
+    "version": "0.4.26-test",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -20,7 +20,6 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:alan",
         "workspaceContains:**/alan",
         "workspaceContains:alan",
         "workspaceContains:project.json"
@@ -194,6 +193,16 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show output window when running Alan tasks."
+                },
+                "alan-definitions.alan": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Alan build tool."
+                },
+                "alan-definitions.alan-capture": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Directory for alan log output for debugging purposes."
                 }
             }
         },
@@ -291,6 +300,7 @@
         "webpack-cli": "^5.1.1"
     },
     "dependencies": {
-        "sanitize-filename": "^1.6.1"
+        "sanitize-filename": "^1.6.1",
+        "vscode-languageclient": "^9.0.0"
     }
 }

@@ -7,6 +7,15 @@ import * as fs from 'fs';
 import {showDefinitions, fuzzyDefinitionSearch} from './search';
 import {AlanSymbolProvider} from './symbols'
 
+import {
+	LanguageClient,
+	LanguageClientOptions,
+	ServerOptions,
+	TransportKind
+} from 'vscode-languageclient/node';
+
+let client: LanguageClient;
+
 function isAlanDeploySupported() : boolean {
 	if (process.env.ALAN_CONTAINER_NAME) {
 		return true;
@@ -65,11 +74,47 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 	}
 }
 
-export function deactivate(context: vscode.ExtensionContext) {
+export function deactivate(): Thenable<void> | undefined {
 	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
 	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', false);
+
+	if (!client) {
+		return undefined;
+	}
+	return client.stop();
 }
-export function activate(context: vscode.ExtensionContext) {
+
+export async function activate(context: vscode.ExtensionContext) {
+	const alan: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan');
+	if (alan && alan !== null && alan !== '') {
+		const serverOptions: ServerOptions = {
+			command: alan,
+			args: ['--lsp'],
+		};
+
+		const capture: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan-capture');
+		if (capture && capture !== null && capture !== '') {
+			serverOptions.args.push("--capture", capture);
+		}
+
+		const clientOptions: LanguageClientOptions = {
+			documentSelector: [{
+				language: 'alan',
+			}],
+		};
+
+		const client = new LanguageClient('alan-language-server', serverOptions, clientOptions);
+		await client.start();
+	}
+	else {
+		if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
+			context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
+				provideDefinition: fuzzyDefinitionSearch
+			}));
+		}
+		context.subscriptions.push(vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions));
+	}
+
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
 	const output_channel = vscode.window.createOutputChannel('Alan');
 
@@ -84,20 +129,11 @@ export function activate(context: vscode.ExtensionContext) {
 	/* set contexts for the Alan Package command */
 	vscode.commands.executeCommand('setContext', 'alan.deploymentPackagingContexts', tasks.deploymentPackagingContexts);
 
-	// pretend to be a definition provider
-	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
-		context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
-			provideDefinition: fuzzyDefinitionSearch
-		}));
-	}
-
 	const alan_resolve_err = "Unable to resolve `alan` tool.";
 	let glob_script_args = {
 		cmd: ""
 	};
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
-
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
 			const context_file = resolveContextFile(taskctx); // (connections.alan) file determines which deployment to build
 			if (context_file) {
