@@ -8,10 +8,14 @@ import {showDefinitions, fuzzyDefinitionSearch} from './search';
 import {AlanSymbolProvider} from './symbols'
 
 import {
+	CloseAction,
+	ErrorAction,
 	LanguageClient,
 	LanguageClientOptions,
+	ProtocolNotificationType0,
 	ServerOptions,
-	TransportKind
+	TransportKind,
+	State,
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -84,10 +88,10 @@ export function deactivate(): Thenable<void> | undefined {
 	return client.stop();
 }
 
-async function startLanguageServer(language_server: string, plugin?: string) {
+async function startLanguageServer(context: vscode.ExtensionContext, language_server: string, plugin?: string) {
 	const serverOptions: ServerOptions = {
 		command: language_server,
-		args: [],
+		args: []
 	};
 
 	if (plugin && plugin !== null) {
@@ -106,11 +110,128 @@ async function startLanguageServer(language_server: string, plugin?: string) {
 		documentSelector: [{
 			language: 'alan',
 		}],
+		// errorHandler: {
+		// 	error: (error, message, count) => {
+		// 		return {
+		// 			action: ErrorAction.Continue
+		// 		};
+		// 	},
+		// 	closed: () => {
+		// 		return {
+		// 			action: CloseAction.DoNotRestart
+		// 		}
+		// 	}
+		// },
+		markdown: {
+			isTrusted: true,
+			supportHtml: true
+		}
 	};
 
 	const client = new LanguageClient('alan-language-server', serverOptions, clientOptions);
-	client.start();
+	client.onDidChangeState((e) => {
+		console.log(`state: ${e.oldState} => ${e.newState}`);
+		switch (e.newState) {
+			case State.Stopped:
+				use_legacy_impl(context); //TODO@GJK: clean this up. should not be done here.
+				break;
+			case State.Running:
+			case State.Starting:
+				break;
+		}
+	});
+	await client.start();
+
+	return client.state != State.Stopped;
 }
+
+function use_legacy_impl(context: vscode.ExtensionContext) {
+	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
+		context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
+			provideDefinition: fuzzyDefinitionSearch
+		}));
+	}
+	context.subscriptions.push(vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions));
+
+	const symbol_provider = new AlanSymbolProvider();
+	vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, symbol_provider),
+	vscode.languages.registerCompletionItemProvider('alan', {
+		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
+			const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
+			if (!wrange)
+				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
+
+			return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
+				let result:Map<string, vscode.CompletionItem> = new Map();
+				function flatten(symvs: vscode.DocumentSymbol[]) {
+					symvs.forEach(sym => {
+						function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
+							switch (kind) {
+								case vscode.SymbolKind.File:
+									return vscode.CompletionItemKind.File;
+								case vscode.SymbolKind.Module:
+									return vscode.CompletionItemKind.Module;
+								case vscode.SymbolKind.Namespace:
+									return vscode.CompletionItemKind.Module;
+								case vscode.SymbolKind.Class:
+									return vscode.CompletionItemKind.Class;
+								case vscode.SymbolKind.Method:
+									return vscode.CompletionItemKind.Method;
+								case vscode.SymbolKind.Enum:
+									return vscode.CompletionItemKind.Enum;
+								case vscode.SymbolKind.Interface:
+									return vscode.CompletionItemKind.Interface;
+								case vscode.SymbolKind.Function:
+									return vscode.CompletionItemKind.Function;
+								case vscode.SymbolKind.Variable:
+									return vscode.CompletionItemKind.Variable;
+								case vscode.SymbolKind.Constant:
+									return vscode.CompletionItemKind.Constant;
+								case vscode.SymbolKind.String:
+									return vscode.CompletionItemKind.Text;
+								case vscode.SymbolKind.Number:
+									return vscode.CompletionItemKind.Constant;
+								case vscode.SymbolKind.Array:
+									return vscode.CompletionItemKind.Property;
+								case vscode.SymbolKind.Event:
+									return vscode.CompletionItemKind.Event;
+								case vscode.SymbolKind.Operator:
+									return vscode.CompletionItemKind.Operator;
+								case vscode.SymbolKind.TypeParameter:
+									return vscode.CompletionItemKind.TypeParameter;
+								case vscode.SymbolKind.Struct:
+									return vscode.CompletionItemKind.Struct;
+								case vscode.SymbolKind.EnumMember:
+									return vscode.CompletionItemKind.EnumMember;
+								default:
+									return vscode.CompletionItemKind.Struct;
+							}
+						}
+						const existing_citem = result[sym.name];
+						const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
+						if (existing_citem && existing_citem.kind === ckind) {
+							//skip
+						} else if (existing_citem && existing_citem.kind === vscode.CompletionItemKind.Struct) {
+							existing_citem.kind = ckind;
+						} else {
+							let item = new vscode.CompletionItem(sym.name, ckind);
+							item.insertText = `'${sym.name}'`;
+							item.filterText = `'${sym.name}'`;
+							item.detail = sym.detail;
+							item.range = wrange;
+							result.set(sym.name, item);
+						}
+						flatten(sym.children);
+					});
+				}
+
+				flatten(symbols);
+				return Array.from(result.values());
+			});
+		}
+	}, '\'')
+}
+
 export async function activate(context: vscode.ExtensionContext) {
 	const alan: string = "/home/gjkunst/Kjerner/alan/.vscode-build/RelWithDebInfo/src/implementation/alan";
 	// const alan: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan');
@@ -120,104 +241,21 @@ export async function activate(context: vscode.ExtensionContext) {
 			let alan_context = await resolveContext(context, 'versions.json');
 			let versions_path: string = await alan_context.root;
 
-			await startLanguageServer(alan, path.join(versions_path, ".alan/devenv/platform/project-build-environment/tools/libbuild-fabric.so"));
+			use_language_server = await startLanguageServer(context, alan, path.join(versions_path, ".alan/devenv/platform/project-build-environment/tools/libbuild-fabric.so"));
 		} catch {
 			use_language_server = false;
 		}
 
 		try {
 			let alan_context = await resolveContext(context, 'project.json');
-			await startLanguageServer(alan);
+			use_language_server = await startLanguageServer(context, alan);
 		} catch {
 			use_language_server = false;
 		}
 	}
 
 	if (!use_language_server) {
-		if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
-			context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
-				provideDefinition: fuzzyDefinitionSearch
-			}));
-		}
-		context.subscriptions.push(vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions));
-
-		const symbol_provider = new AlanSymbolProvider();
-		vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, symbol_provider),
-		vscode.languages.registerCompletionItemProvider('alan', {
-			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-				const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
-				if (!wrange)
-					return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
-
-				return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
-					let result:Map<string, vscode.CompletionItem> = new Map();
-					function flatten(symvs: vscode.DocumentSymbol[]) {
-						symvs.forEach(sym => {
-							function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
-								switch (kind) {
-									case vscode.SymbolKind.File:
-										return vscode.CompletionItemKind.File;
-									case vscode.SymbolKind.Module:
-										return vscode.CompletionItemKind.Module;
-									case vscode.SymbolKind.Namespace:
-										return vscode.CompletionItemKind.Module;
-									case vscode.SymbolKind.Class:
-										return vscode.CompletionItemKind.Class;
-									case vscode.SymbolKind.Method:
-										return vscode.CompletionItemKind.Method;
-									case vscode.SymbolKind.Enum:
-										return vscode.CompletionItemKind.Enum;
-									case vscode.SymbolKind.Interface:
-										return vscode.CompletionItemKind.Interface;
-									case vscode.SymbolKind.Function:
-										return vscode.CompletionItemKind.Function;
-									case vscode.SymbolKind.Variable:
-										return vscode.CompletionItemKind.Variable;
-									case vscode.SymbolKind.Constant:
-										return vscode.CompletionItemKind.Constant;
-									case vscode.SymbolKind.String:
-										return vscode.CompletionItemKind.Text;
-									case vscode.SymbolKind.Number:
-										return vscode.CompletionItemKind.Constant;
-									case vscode.SymbolKind.Array:
-										return vscode.CompletionItemKind.Property;
-									case vscode.SymbolKind.Event:
-										return vscode.CompletionItemKind.Event;
-									case vscode.SymbolKind.Operator:
-										return vscode.CompletionItemKind.Operator;
-									case vscode.SymbolKind.TypeParameter:
-										return vscode.CompletionItemKind.TypeParameter;
-									case vscode.SymbolKind.Struct:
-										return vscode.CompletionItemKind.Struct;
-									case vscode.SymbolKind.EnumMember:
-										return vscode.CompletionItemKind.EnumMember;
-									default:
-										return vscode.CompletionItemKind.Struct;
-								}
-							}
-							const existing_citem = result[sym.name];
-							const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
-							if (existing_citem && existing_citem.kind === ckind) {
-								//skip
-							} else if (existing_citem && existing_citem.kind === vscode.CompletionItemKind.Struct) {
-								existing_citem.kind = ckind;
-							} else {
-								let item = new vscode.CompletionItem(sym.name, ckind);
-								item.insertText = `'${sym.name}'`;
-								item.filterText = `'${sym.name}'`;
-								item.detail = sym.detail;
-								item.range = wrange;
-								result.set(sym.name, item);
-							}
-							flatten(sym.children);
-						});
-					}
-
-					flatten(symbols);
-					return Array.from(result.values());
-				});
-			}
-		}, '\'')
+		use_legacy_impl(context);
 	}
 
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
