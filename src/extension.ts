@@ -17,6 +17,7 @@ import {
 	TransportKind,
 	State,
 } from 'vscode-languageclient/node';
+import { versions } from 'process';
 
 let client: LanguageClient;
 
@@ -88,20 +89,15 @@ export function deactivate(): Thenable<void> | undefined {
 	return client.stop();
 }
 
-async function startLanguageServer(context: vscode.ExtensionContext, language_server: string, plugin?: string) {
+async function startLanguageServer(context: vscode.ExtensionContext, language_server: string) {
 	const serverOptions: ServerOptions = {
 		command: language_server,
 		args: []
 	};
 
-	if (plugin && plugin !== null) {
-		serverOptions.args.push("--plugin", plugin);
-	}
-
 	serverOptions.args.push('--lsp');
 
-	const capture: string = "/home/gjkunst/Kjerner/alan-lsp";
-	// const capture: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan-capture');
+	const capture: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan-capture');
 	if (capture && capture !== null && capture !== '') {
 		serverOptions.args.push("--capture", capture);
 	}
@@ -232,24 +228,32 @@ function use_legacy_impl(context: vscode.ExtensionContext) {
 	}, '\'')
 }
 
+async function start_tool(context: vscode.ExtensionContext, conf: string, root_marker: string) {
+	let alan_context = await resolveContext(context, root_marker);
+	let versions_path: string = await alan_context.root;
+
+	const fabric_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
+	const fabric: string = path.resolve(versions_path, fabric_conf);
+
+	try {
+		fs.accessSync(fabric, fs.constants.X_OK);
+		startLanguageServer(context, fabric);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+
 export async function activate(context: vscode.ExtensionContext) {
-	const alan: string = "/home/gjkunst/Kjerner/alan/.vscode-build/RelWithDebInfo/src/implementation/alan";
-	// const alan: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan');
-	let use_language_server:boolean = (alan && alan !== null && alan !== '');
-	if (use_language_server) {
+	let use_language_server:boolean = true;
+	try {
+		use_language_server = await start_tool(context, `fabric`, `versions.json`);
+	} catch {
 		try {
-			let alan_context = await resolveContext(context, 'versions.json');
-			let versions_path: string = await alan_context.root;
-
-			use_language_server = await startLanguageServer(context, alan, path.join(versions_path, ".alan/devenv/platform/project-build-environment/tools/libbuild-fabric.so"));
-		} catch {
-			use_language_server = false;
+			use_language_server = await start_tool(context, `alan`, `project.json`);
 		}
-
-		try {
-			let alan_context = await resolveContext(context, 'project.json');
-			use_language_server = await startLanguageServer(context, alan);
-		} catch {
+		catch {
 			use_language_server = false;
 		}
 	}
@@ -271,7 +275,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	/* set contexts for the Alan Package command */
 	vscode.commands.executeCommand('setContext', 'alan.deploymentPackagingContexts', tasks.deploymentPackagingContexts);
 
-	const alan_resolve_err = "Unable to resolve `alan` tool.";
+	const alan_resolve_err = "Unable to resolve `alan` script.";
 	let glob_script_args = {
 		cmd: ""
 	};
@@ -297,7 +301,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.build', async (taskctx) => {
 			try {
 				let alan_context = await resolveContext(taskctx, 'alan');
-				tasks.build(await alan_context.context, await alan_context.root, output_channel, diagnostic_collection);
+				tasks.build(await alan_context.context, await alan_context.root, output_channel, use_language_server ? undefined : diagnostic_collection);
 			} catch {
 				let error = `Build command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
@@ -327,7 +331,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.dev.tasks.script', async (taskctx) => {
 			tasks.scriptDev(output_channel, diagnostic_collection, glob_script_args.cmd, taskctx[1]);
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, diagnostic_collection)),
+		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, use_language_server ? undefined : diagnostic_collection)),
 		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
 
 		vscode.tasks.registerTaskProvider('alan', {

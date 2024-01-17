@@ -77,14 +77,14 @@ function stripAnsi(string: string) {
 	return string.replace(re_strip_ansi, '');
 }
 
-function executeCommand(shell_command: string, cwd: string, shell: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+function executeCommand(shell_command: string, cwd: string, shell: string, output_channel: vscode.OutputChannel, diagnostics_collection?: vscode.DiagnosticCollection) {
 	output_channel.clear();
 
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('showTaskOutput')) {
 		output_channel.show(true);
 	}
 
-    diagnostics_collection.clear();
+    diagnostics_collection?.clear();
 
 	output_channel.appendLine(`> Running '${shell_command}' in '${cwd}'`);
     const child: proc.ChildProcess|undefined
@@ -202,7 +202,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 				});
 			}
 
-			diagnostics_collection.set(diagnostics);
+			diagnostics_collection?.set(diagnostics);
 		});
 	} else {
         const error = `Unable to execute command '${shell_command}'.`;
