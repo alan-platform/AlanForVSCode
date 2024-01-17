@@ -126,7 +126,7 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 
 	const client = new LanguageClient('alan-language-server', serverOptions, clientOptions);
 	client.onDidChangeState((e) => {
-		console.log(`state: ${e.oldState} => ${e.newState}`);
+		// console.log(`state: ${e.oldState} => ${e.newState}`);
 		switch (e.newState) {
 			case State.Stopped:
 				use_legacy_impl(context); //TODO@GJK: clean this up. should not be done here.
