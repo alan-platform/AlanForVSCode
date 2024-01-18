@@ -102,22 +102,26 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 		serverOptions.args.push("--capture", capture);
 	}
 
+	let data = "";
+	// serverProcess.stderr.on('data', data => this.outputChannel.append(Is.string(data) ? data : data.toString(encoding)));
+
+
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [{
 			language: 'alan',
 		}],
-		// errorHandler: {
-		// 	error: (error, message, count) => {
-		// 		return {
-		// 			action: ErrorAction.Continue
-		// 		};
-		// 	},
-		// 	closed: () => {
-		// 		return {
-		// 			action: CloseAction.DoNotRestart
-		// 		}
-		// 	}
-		// },
+		errorHandler: {
+			error: (error, message, count) => {
+				return {
+					action: ErrorAction.Continue
+				};
+			},
+			closed: () => {
+				return {
+					action: CloseAction.DoNotRestart
+				};
+			}
+		},
 		markdown: {
 			isTrusted: true,
 			supportHtml: true
@@ -125,6 +129,7 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 	};
 
 	const client = new LanguageClient('alan-language-server', serverOptions, clientOptions);
+
 	client.onDidChangeState((e) => {
 		// console.log(`state: ${e.oldState} => ${e.newState}`);
 		switch (e.newState) {
