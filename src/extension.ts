@@ -238,12 +238,12 @@ async function start_tool(context: vscode.ExtensionContext, conf: string, root_m
 	let alan_context = await resolveContext(context, root_marker);
 	let versions_path: string = await alan_context.root;
 
-	const fabric_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
-	const fabric: string = path.resolve(versions_path, fabric_conf);
+	const tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
+	const tool: string = path.resolve(versions_path, tool_conf);
 
 	try {
-		fs.accessSync(fabric, fs.constants.X_OK);
-		startLanguageServer(context, fabric);
+		fs.accessSync(tool, fs.constants.X_OK);
+		startLanguageServer(context, tool);
 		return true;
 	} catch {
 		return false;
