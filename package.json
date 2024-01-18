@@ -7,7 +7,7 @@
         "color": "#1e1e1e",
         "theme": "dark"
     },
-    "version": "0.4.26-test",
+    "version": "1.0.0",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -196,18 +196,18 @@
                 },
                 "alan-definitions.alan": {
                     "type": "string",
-                    "default": "/home/gjkunst/Kjerner/alan/.vscode-build/RelWithDebInfo/src/implementation/alan",
-                    "description": "Alan build tool."
+                    "default": "dependencies/dev/internals/alan/tools/alan",
+                    "description": "Alan meta build tool. Must be an absolute path or a path relative to a `project.json` file."
                 },
                 "alan-definitions.fabric": {
                     "type": "string",
                     "default": ".alan/devenv/platform/project-build-environment/tools/fabric",
-                    "description": "Fabric build tool."
+                    "description": "Alan platform project build tool. Must be an absolute path or a path relative to a `versions.json` file."
                 },
                 "alan-definitions.alan-capture": {
                     "type": "string",
-                    "default": "/home/gjkunst/Kjerner/alan-lsp",
-                    "description": "Directory for alan log output for debugging purposes."
+                    "default": null,
+                    "description": "Directory for logging output from the build tools, for debugging purposes."
                 }
             }
         },

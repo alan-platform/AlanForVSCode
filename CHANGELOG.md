@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.0
+- implement support for the Alan language server
+  - `alan`: build tool/language server for Alan meta projects
+  - `fabric`: build tool/language server for Alan platform projects
+  - `alan-capture`: path to store language server logs for debugging purposes
+- add task type `alan-script`
+- improve fuzzy definition search
+
+
 ## 0.4.22
 - find `generate_migration.sh` script depending on platform version
 
