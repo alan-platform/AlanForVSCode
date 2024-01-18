@@ -129,7 +129,7 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 		// console.log(`state: ${e.oldState} => ${e.newState}`);
 		switch (e.newState) {
 			case State.Stopped:
-				use_legacy_impl(context); //TODO@GJK: clean this up. should not be done here.
+				use_legacy_impl(context);
 				break;
 			case State.Running:
 			case State.Starting:
@@ -141,7 +141,13 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 	return client.state != State.Stopped;
 }
 
+let legacy_mode:boolean = false;
 function use_legacy_impl(context: vscode.ExtensionContext) {
+	if (legacy_mode)
+		return;
+
+	legacy_mode = true;
+
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
 		context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
 			provideDefinition: fuzzyDefinitionSearch
