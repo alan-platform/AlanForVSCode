@@ -102,10 +102,6 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 		serverOptions.args.push("--capture", capture);
 	}
 
-	let data = "";
-	// serverProcess.stderr.on('data', data => this.outputChannel.append(Is.string(data) ? data : data.toString(encoding)));
-
-
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [{
 			language: 'alan',
