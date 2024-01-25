@@ -12,12 +12,10 @@ import {
 	ErrorAction,
 	LanguageClient,
 	LanguageClientOptions,
-	ProtocolNotificationType0,
 	ServerOptions,
 	TransportKind,
 	State,
 } from 'vscode-languageclient/node';
-import { versions } from 'process';
 
 let client: LanguageClient;
 
@@ -92,10 +90,9 @@ export function deactivate(): Thenable<void> | undefined {
 async function startLanguageServer(context: vscode.ExtensionContext, language_server: string) {
 	const serverOptions: ServerOptions = {
 		command: language_server,
-		args: []
+		args: ['--lsp'],
+		transport: TransportKind.stdio
 	};
-
-	serverOptions.args.push('--lsp');
 
 	const capture: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan-capture');
 	if (capture && capture !== null && capture !== '') {
@@ -239,7 +236,10 @@ async function start_tool(context: vscode.ExtensionContext, conf: string, root_m
 	let alan_context = await resolveContext(context, root_marker);
 	let versions_path: string = await alan_context.root;
 
-	const tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
+	let tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
+	if (process.platform === 'win32')
+		tool_conf += `.exe`;
+
 	const tool: string = path.resolve(versions_path, tool_conf);
 
 	try {

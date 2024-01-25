@@ -7,7 +7,7 @@
         "color": "#1e1e1e",
         "theme": "dark"
     },
-    "version": "1.0.0",
+    "version": "1.0.1",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -197,12 +197,12 @@
                 "alan-definitions.alan": {
                     "type": "string",
                     "default": "dependencies/dev/internals/alan/tools/alan",
-                    "description": "Alan meta build tool. Must be an absolute path or a path relative to a `project.json` file."
+                    "markdownDescription": "Alan meta build tool. Must be an absolute path or a path relative to a `project.json` file. On Windows, the extension (`.exe`) must be ommitted."
                 },
                 "alan-definitions.fabric": {
                     "type": "string",
                     "default": ".alan/devenv/platform/project-build-environment/tools/fabric",
-                    "description": "Alan platform project build tool. Must be an absolute path or a path relative to a `versions.json` file."
+                    "markdownDescription": "Alan platform project build tool. Must be an absolute path or a path relative to a `versions.json` file. On Windows, the extension (`.exe`) must be ommitted."
                 },
                 "alan-definitions.alan-capture": {
                     "type": "string",

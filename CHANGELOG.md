@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.1
+- language server support for Windows
+
 ## 1.0.0
 - implement support for the Alan language server
   - `alan`: build tool/language server for Alan meta projects
