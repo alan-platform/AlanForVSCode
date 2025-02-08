@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.2
+- language server support for nested Alan project directories: the extension starts a language server instance for each `versions.json` and `project.json` that is found
+
 ## 1.0.1
 - language server support for Windows
 
