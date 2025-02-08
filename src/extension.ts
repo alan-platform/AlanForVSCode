@@ -14,12 +14,14 @@ import {
 	LanguageClientOptions,
 	ServerOptions,
 	TransportKind,
-	State,
-	WorkspaceChange,
-	Trace,
-	URI
+	State
 } from 'vscode-languageclient/node';
 import { url } from 'inspector';
+
+enum LSPContextType {
+	alan = 'alan',
+	fabric = 'fabric'
+}
 
 const clients = new Map<string, LanguageClient>();
 
@@ -81,20 +83,14 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 	}
 }
 
-export function deactivate(): Thenable<void> | undefined {
-	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
-	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', false);
-
-	const promises: Thenable<void>[] = [];
-	for (const client of clients.values()) {
-		promises.push(client.stop());
-	}
-	return Promise.all(promises).then(() => undefined);
+function getDocumentFilterForPath(path: vscode.Uri) {
+	return {
+		language: 'alan',
+		pattern: `${path.fsPath}/**/*`
+	};
 }
 
 async function startLanguageServer(context: vscode.ExtensionContext, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder, language_server: string) {
-	// if (clients.size > 0)
-	// 	return;
 	const serverOptions: ServerOptions = {
 		command: language_server,
 		args: ['--lsp'],
@@ -109,18 +105,8 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 		serverOptions.args.push("--capture", capture);
 	}
 
-	// let folder = vscode.workspace.getWorkspaceFolder(uri);
-	// // Files outside a folder can't be handled. This might depend on the language.
-	// // Single file languages like JSON might handle files outside the workspace folders.
-	// if (!folder) {
-	// 	return;
-	// }
-
 	const clientOptions: LanguageClientOptions = {
-		documentSelector: [{
-			language: 'alan',
-			pattern: `${project_root.fsPath}/**/*`
-		}],
+		documentSelector: [getDocumentFilterForPath(project_root)],
 		errorHandler: {
 			error: (error, message, count) => {
 				return {
@@ -138,23 +124,21 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 			isTrusted: true,
 			supportHtml: true
 		},
-		workspaceFolder: workspace_folder
-		// {
-		// 	uri: uri,
-		// 	name: `name${clients.size}`,
-		// 	index: 0
-		// }
+		workspaceFolder: {
+			uri: project_root,
+			name: `name${clients.size}`,
+			index: workspace_folder.index
+		}
 	};
 
 	const client = new LanguageClient(`alan-language-server${clients.size}`, serverOptions, clientOptions);
 	clients.set(project_root.fsPath, client);
-	client.setTrace(Trace.Verbose);
 
 	client.onDidChangeState((e) => {
 		// console.log(`state: ${e.oldState} => ${e.newState}`);
 		switch (e.newState) {
 			case State.Stopped:
-				use_legacy_impl(context, project_root);
+				useLegacyImpl(context, project_root);
 				break;
 			case State.Running:
 			case State.Starting:
@@ -168,15 +152,25 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 	return client.state != State.Stopped;
 }
 
-// let legacy_mode: boolean = false;
-function use_legacy_impl(context: vscode.ExtensionContext, path: vscode.Uri) {
-	// if (legacy_mode)
-	// 	return;
+async function startTool(context: vscode.ExtensionContext, conf: string, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder) {
+	let tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
+	if (process.platform === 'win32')
+		tool_conf += `.exe`;
 
-	// legacy_mode = true;
+	const tool: string = path.resolve(project_root.fsPath, tool_conf);
 
+	try {
+		fs.accessSync(tool, fs.constants.X_OK);
+		startLanguageServer(context, project_root, workspace_folder, tool);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function useLegacyImpl(context: vscode.ExtensionContext, path: vscode.Uri) {
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
-		context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
+		context.subscriptions.push(vscode.languages.registerDefinitionProvider(getDocumentFilterForPath(path), {
 			provideDefinition: fuzzyDefinitionSearch
 		}));
 	}
@@ -184,11 +178,8 @@ function use_legacy_impl(context: vscode.ExtensionContext, path: vscode.Uri) {
 
 	const symbol_provider = new AlanSymbolProvider();
 
-	vscode.languages.registerDocumentSymbolProvider({
-		language: 'alan',
-		pattern: `${path.fsPath}/**/*`
-	}, symbol_provider),
-		vscode.languages.registerCompletionItemProvider('alan', {
+	vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), symbol_provider),
+		vscode.languages.registerCompletionItemProvider(getDocumentFilterForPath(path), {
 			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
 				const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
 				if (!wrange)
@@ -265,27 +256,16 @@ function use_legacy_impl(context: vscode.ExtensionContext, path: vscode.Uri) {
 		}, '\'')
 }
 
-async function start_tool(context: vscode.ExtensionContext, conf: string, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder) {
-	let tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
-	if (process.platform === 'win32')
-		tool_conf += `.exe`;
+export function deactivate(): Thenable<void> | undefined {
+	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
+	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', false);
 
-	const tool: string = path.resolve(project_root.fsPath, tool_conf);
-
-	try {
-		fs.accessSync(tool, fs.constants.X_OK);
-		startLanguageServer(context, project_root, workspace_folder, tool);
-		return true;
-	} catch {
-		return false;
+	const promises: Thenable<void>[] = [];
+	for (const client of clients.values()) {
+		promises.push(client.stop());
 	}
+	return Promise.all(promises).then(() => undefined);
 }
-
-enum LSPContextType {
-	alan = `alan`,
-	fabric = `fabric`
-}
-
 export async function activate(context: vscode.ExtensionContext) {
 	const walk = (dir, onfile: (err: NodeJS.ErrnoException|null, file?: string, type?: LSPContextType) => void) => {
 		let results = {
@@ -313,17 +293,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	};
 
 	for (const workspace of vscode.workspace.workspaceFolders) {
-		const workspace_path = workspace.uri.fsPath; //Hmmm..
-		walk(workspace_path, (err, file, type) => {
+		walk(workspace.uri.fsPath, (err, file, type) => {
 			if (err) {
 				console.error(err);
 			}
 			else {
 				const project_root = vscode.Uri.parse(path.dirname(file));
 				try {
-					start_tool(context, type, project_root, workspace);
+					startTool(context, type, project_root, workspace);
 				} catch {
-					use_legacy_impl(context, project_root);
+					useLegacyImpl(context, project_root);
 				}
 			}
 		});
