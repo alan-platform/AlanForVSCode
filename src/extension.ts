@@ -4,8 +4,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as tasks from './tasks';
 import * as fs from 'fs';
-import {showDefinitions, fuzzyDefinitionSearch} from './search';
-import {AlanSymbolProvider} from './symbols'
+import { showDefinitions, fuzzyDefinitionSearch } from './search';
+import { AlanSymbolProvider } from './symbols'
 
 import {
 	CloseAction,
@@ -15,11 +15,15 @@ import {
 	ServerOptions,
 	TransportKind,
 	State,
+	WorkspaceChange,
+	Trace,
+	URI
 } from 'vscode-languageclient/node';
+import { url } from 'inspector';
 
-let client: LanguageClient;
+const clients = new Map<string, LanguageClient>();
 
-function isAlanDeploySupported() : boolean {
+function isAlanDeploySupported(): boolean {
 	if (process.env.ALAN_CONTAINER_NAME) {
 		return true;
 	} else {
@@ -27,7 +31,7 @@ function isAlanDeploySupported() : boolean {
 	}
 }
 
-function isAlanAppURLProvided() : boolean {
+function isAlanAppURLProvided(): boolean {
 	if (process.env.ALAN_APP_URL) {
 		return true;
 	} else {
@@ -81,17 +85,23 @@ export function deactivate(): Thenable<void> | undefined {
 	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
 	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', false);
 
-	if (!client) {
-		return undefined;
+	const promises: Thenable<void>[] = [];
+	for (const client of clients.values()) {
+		promises.push(client.stop());
 	}
-	return client.stop();
+	return Promise.all(promises).then(() => undefined);
 }
 
-async function startLanguageServer(context: vscode.ExtensionContext, language_server: string) {
+async function startLanguageServer(context: vscode.ExtensionContext, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder, language_server: string) {
+	// if (clients.size > 0)
+	// 	return;
 	const serverOptions: ServerOptions = {
 		command: language_server,
 		args: ['--lsp'],
-		transport: TransportKind.stdio
+		transport: TransportKind.stdio,
+		options: {
+			cwd: project_root.fsPath,
+		}
 	};
 
 	const capture: string = vscode.workspace.getConfiguration('alan-definitions').get<string>('alan-capture');
@@ -99,9 +109,17 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 		serverOptions.args.push("--capture", capture);
 	}
 
+	// let folder = vscode.workspace.getWorkspaceFolder(uri);
+	// // Files outside a folder can't be handled. This might depend on the language.
+	// // Single file languages like JSON might handle files outside the workspace folders.
+	// if (!folder) {
+	// 	return;
+	// }
+
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [{
 			language: 'alan',
+			pattern: `${project_root.fsPath}/**/*`
 		}],
 		errorHandler: {
 			error: (error, message, count) => {
@@ -115,19 +133,28 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 				};
 			}
 		},
+		progressOnInitialization: true,
 		markdown: {
 			isTrusted: true,
 			supportHtml: true
-		}
+		},
+		workspaceFolder: workspace_folder
+		// {
+		// 	uri: uri,
+		// 	name: `name${clients.size}`,
+		// 	index: 0
+		// }
 	};
 
-	const client = new LanguageClient('alan-language-server', serverOptions, clientOptions);
+	const client = new LanguageClient(`alan-language-server${clients.size}`, serverOptions, clientOptions);
+	clients.set(project_root.fsPath, client);
+	client.setTrace(Trace.Verbose);
 
 	client.onDidChangeState((e) => {
 		// console.log(`state: ${e.oldState} => ${e.newState}`);
 		switch (e.newState) {
 			case State.Stopped:
-				use_legacy_impl(context);
+				use_legacy_impl(context, project_root);
 				break;
 			case State.Running:
 			case State.Starting:
@@ -136,15 +163,17 @@ async function startLanguageServer(context: vscode.ExtensionContext, language_se
 	});
 	await client.start();
 
+	clients.set(project_root.toString(), client);
+
 	return client.state != State.Stopped;
 }
 
-let legacy_mode:boolean = false;
-function use_legacy_impl(context: vscode.ExtensionContext) {
-	if (legacy_mode)
-		return;
+// let legacy_mode: boolean = false;
+function use_legacy_impl(context: vscode.ExtensionContext, path: vscode.Uri) {
+	// if (legacy_mode)
+	// 	return;
 
-	legacy_mode = true;
+	// legacy_mode = true;
 
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
 		context.subscriptions.push(vscode.languages.registerDefinitionProvider('alan', {
@@ -154,119 +183,150 @@ function use_legacy_impl(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions));
 
 	const symbol_provider = new AlanSymbolProvider();
-	vscode.languages.registerDocumentSymbolProvider({ language: 'alan' }, symbol_provider),
-	vscode.languages.registerCompletionItemProvider('alan', {
-		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-			const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
-			if (!wrange)
-				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
 
-			return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
-				let result:Map<string, vscode.CompletionItem> = new Map();
-				function flatten(symvs: vscode.DocumentSymbol[]) {
-					symvs.forEach(sym => {
-						function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
-							switch (kind) {
-								case vscode.SymbolKind.File:
-									return vscode.CompletionItemKind.File;
-								case vscode.SymbolKind.Module:
-									return vscode.CompletionItemKind.Module;
-								case vscode.SymbolKind.Namespace:
-									return vscode.CompletionItemKind.Module;
-								case vscode.SymbolKind.Class:
-									return vscode.CompletionItemKind.Class;
-								case vscode.SymbolKind.Method:
-									return vscode.CompletionItemKind.Method;
-								case vscode.SymbolKind.Enum:
-									return vscode.CompletionItemKind.Enum;
-								case vscode.SymbolKind.Interface:
-									return vscode.CompletionItemKind.Interface;
-								case vscode.SymbolKind.Function:
-									return vscode.CompletionItemKind.Function;
-								case vscode.SymbolKind.Variable:
-									return vscode.CompletionItemKind.Variable;
-								case vscode.SymbolKind.Constant:
-									return vscode.CompletionItemKind.Constant;
-								case vscode.SymbolKind.String:
-									return vscode.CompletionItemKind.Text;
-								case vscode.SymbolKind.Number:
-									return vscode.CompletionItemKind.Constant;
-								case vscode.SymbolKind.Array:
-									return vscode.CompletionItemKind.Property;
-								case vscode.SymbolKind.Event:
-									return vscode.CompletionItemKind.Event;
-								case vscode.SymbolKind.Operator:
-									return vscode.CompletionItemKind.Operator;
-								case vscode.SymbolKind.TypeParameter:
-									return vscode.CompletionItemKind.TypeParameter;
-								case vscode.SymbolKind.Struct:
-									return vscode.CompletionItemKind.Struct;
-								case vscode.SymbolKind.EnumMember:
-									return vscode.CompletionItemKind.EnumMember;
-								default:
-									return vscode.CompletionItemKind.Struct;
+	vscode.languages.registerDocumentSymbolProvider({
+		language: 'alan',
+		pattern: `${path.fsPath}/**/*`
+	}, symbol_provider),
+		vscode.languages.registerCompletionItemProvider('alan', {
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
+				const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
+				if (!wrange)
+					return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
+
+				return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
+					let result: Map<string, vscode.CompletionItem> = new Map();
+					function flatten(symvs: vscode.DocumentSymbol[]) {
+						symvs.forEach(sym => {
+							function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
+								switch (kind) {
+									case vscode.SymbolKind.File:
+										return vscode.CompletionItemKind.File;
+									case vscode.SymbolKind.Module:
+										return vscode.CompletionItemKind.Module;
+									case vscode.SymbolKind.Namespace:
+										return vscode.CompletionItemKind.Module;
+									case vscode.SymbolKind.Class:
+										return vscode.CompletionItemKind.Class;
+									case vscode.SymbolKind.Method:
+										return vscode.CompletionItemKind.Method;
+									case vscode.SymbolKind.Enum:
+										return vscode.CompletionItemKind.Enum;
+									case vscode.SymbolKind.Interface:
+										return vscode.CompletionItemKind.Interface;
+									case vscode.SymbolKind.Function:
+										return vscode.CompletionItemKind.Function;
+									case vscode.SymbolKind.Variable:
+										return vscode.CompletionItemKind.Variable;
+									case vscode.SymbolKind.Constant:
+										return vscode.CompletionItemKind.Constant;
+									case vscode.SymbolKind.String:
+										return vscode.CompletionItemKind.Text;
+									case vscode.SymbolKind.Number:
+										return vscode.CompletionItemKind.Constant;
+									case vscode.SymbolKind.Array:
+										return vscode.CompletionItemKind.Property;
+									case vscode.SymbolKind.Event:
+										return vscode.CompletionItemKind.Event;
+									case vscode.SymbolKind.Operator:
+										return vscode.CompletionItemKind.Operator;
+									case vscode.SymbolKind.TypeParameter:
+										return vscode.CompletionItemKind.TypeParameter;
+									case vscode.SymbolKind.Struct:
+										return vscode.CompletionItemKind.Struct;
+									case vscode.SymbolKind.EnumMember:
+										return vscode.CompletionItemKind.EnumMember;
+									default:
+										return vscode.CompletionItemKind.Struct;
+								}
 							}
-						}
-						const existing_citem = result[sym.name];
-						const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
-						if (existing_citem && existing_citem.kind === ckind) {
-							//skip
-						} else if (existing_citem && existing_citem.kind === vscode.CompletionItemKind.Struct) {
-							existing_citem.kind = ckind;
-						} else {
-							let item = new vscode.CompletionItem(sym.name, ckind);
-							item.insertText = `'${sym.name}'`;
-							item.filterText = `'${sym.name}'`;
-							item.detail = sym.detail;
-							item.range = wrange;
-							result.set(sym.name, item);
-						}
-						flatten(sym.children);
-					});
-				}
+							const existing_citem = result[sym.name];
+							const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
+							if (existing_citem && existing_citem.kind === ckind) {
+								//skip
+							} else if (existing_citem && existing_citem.kind === vscode.CompletionItemKind.Struct) {
+								existing_citem.kind = ckind;
+							} else {
+								let item = new vscode.CompletionItem(sym.name, ckind);
+								item.insertText = `'${sym.name}'`;
+								item.filterText = `'${sym.name}'`;
+								item.detail = sym.detail;
+								item.range = wrange;
+								result.set(sym.name, item);
+							}
+							flatten(sym.children);
+						});
+					}
 
-				flatten(symbols);
-				return Array.from(result.values());
-			});
-		}
-	}, '\'')
+					flatten(symbols);
+					return Array.from(result.values());
+				});
+			}
+		}, '\'')
 }
 
-async function start_tool(context: vscode.ExtensionContext, conf: string, root_marker: string) {
-	let alan_context = await resolveContext(context, root_marker);
-	let versions_path: string = await alan_context.root;
-
+async function start_tool(context: vscode.ExtensionContext, conf: string, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder) {
 	let tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
 	if (process.platform === 'win32')
 		tool_conf += `.exe`;
 
-	const tool: string = path.resolve(versions_path, tool_conf);
+	const tool: string = path.resolve(project_root.fsPath, tool_conf);
 
 	try {
 		fs.accessSync(tool, fs.constants.X_OK);
-		startLanguageServer(context, tool);
+		startLanguageServer(context, project_root, workspace_folder, tool);
 		return true;
 	} catch {
 		return false;
 	}
 }
 
+enum LSPContextType {
+	alan = `alan`,
+	fabric = `fabric`
+}
 
 export async function activate(context: vscode.ExtensionContext) {
-	let use_language_server:boolean = true;
-	try {
-		use_language_server = await start_tool(context, `fabric`, `versions.json`);
-	} catch {
-		try {
-			use_language_server = await start_tool(context, `alan`, `project.json`);
-		}
-		catch {
-			use_language_server = false;
-		}
-	}
+	const walk = (dir, onfile: (err: NodeJS.ErrnoException|null, file?: string, type?: LSPContextType) => void) => {
+		let results = {
+			alan: [],
+			fabric: []
+		};
+		fs.readdir(dir, (err, list) => {
+			if (err) return onfile(err);
+			list.forEach((fname) => {
+				const file = path.resolve(dir, fname);
+				fs.stat(file, function (err, stat) {
+					if (stat && stat.isDirectory()) {
+						walk(file, onfile);
+					} else {
+						if (fname === "project.json") {
+							onfile(null, file, LSPContextType.alan);
+						}
+						else if (fname === "versions.json") {
+							onfile(null, file, LSPContextType.fabric);
+						}
+					}
+				});
+			});
+		});
+	};
 
-	if (!use_language_server) {
-		use_legacy_impl(context);
+	for (const workspace of vscode.workspace.workspaceFolders) {
+		const workspace_path = workspace.uri.fsPath; //Hmmm..
+		walk(workspace_path, (err, file, type) => {
+			if (err) {
+				console.error(err);
+			}
+			else {
+				const project_root = vscode.Uri.parse(path.dirname(file));
+				try {
+					start_tool(context, type, project_root, workspace);
+				} catch {
+					use_legacy_impl(context, project_root);
+				}
+			}
+		});
 	}
 
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
@@ -308,7 +368,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.build', async (taskctx) => {
 			try {
 				let alan_context = await resolveContext(taskctx, 'alan');
-				tasks.build(await alan_context.context, await alan_context.root, output_channel, use_language_server ? undefined : diagnostic_collection);
+				tasks.build(await alan_context.context, await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection);
 			} catch {
 				let error = `Build command failed. ${alan_resolve_err}`;
 				vscode.window.showErrorMessage(error);
@@ -338,7 +398,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.dev.tasks.script', async (taskctx) => {
 			tasks.scriptDev(output_channel, diagnostic_collection, glob_script_args.cmd, taskctx[1]);
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, use_language_server ? undefined : diagnostic_collection)),
+		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, undefined)),
 		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
 
 		vscode.tasks.registerTaskProvider('alan', {
