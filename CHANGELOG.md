@@ -7,6 +7,7 @@
 - auto fetch: run `./alan fetch` or `./bootstrap.sh` when required dependencies are missing
 - auto fetch: configuration options to enable/disable it
 - list 'mapping from target conformant dataset' as first migration generation option
+- fixes for running tasks/commands with no open files in an Alan meta environment
 
 ## 1.0.1
 - language server support for Windows

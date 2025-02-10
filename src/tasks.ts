@@ -363,12 +363,6 @@ export async function fetch(alan_root: string, output_channel: vscode.OutputChan
 	return executeCommand(`${alan} fetch`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
-export async function bootstrap(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection): Promise<void> {
-	const shell = await resolveBashShell();
-	const alan = pathToBashPath(`${alan_root}/bootstrap.sh`, shell);
-
-	return executeCommand(`${alan}`, alan_root, shell, output_channel, diagnostics_collection);
-}
 
 export async function deploy(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
@@ -498,22 +492,20 @@ export async function scriptDev(output_channel: vscode.OutputChannel, diagnostic
 	const shell = await resolveBashShell();
 	executeCommand(`${cmd}`, cwd, shell, output_channel, diagnostics_collection);
 }
-export async function buildDev(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function fetchDev(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection): Promise<void> {
 	const shell = await resolveBashShell();
+	const alan = pathToBashPath(`${alan_root}/bootstrap.sh`, shell);
 
-	const active_file_name = vscode.window.activeTextEditor.document.fileName;
-	const active_file_dirname = path.dirname(active_file_name);
-	const alan_root = await resolveRoot(active_file_dirname, 'project.json');
+	return executeCommand(`${alan}`, alan_root, shell, output_channel, diagnostics_collection);
+}
+export async function buildDev(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+	const shell = await resolveBashShell();
 	const build_sh = pathToBashPath(`${alan_root}/build.sh`, shell);
 
 	executeCommand(`${build_sh}`, alan_root, shell, output_channel, diagnostics_collection);
 }
-export async function testDev(output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function testDev(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
 	const shell = await resolveBashShell();
-
-	const active_file_name = vscode.window.activeTextEditor.document.fileName;
-	const active_file_dirname = path.dirname(active_file_name);
-	const alan_root = await resolveRoot(active_file_dirname, 'project.json');
 	const test_sh = pathToBashPath(`${alan_root}/test.sh`, shell);
 
 	executeCommand(`${test_sh}`, alan_root, shell, output_channel, diagnostics_collection);
@@ -525,7 +517,6 @@ export async function getTasksListDev(dev_root: string): Promise<vscode.Task[]> 
 
 	try {
 		const shell = await resolveBashShell();
-		const bootstrap_sh = pathToBashPath(`${dev_root}/bootstrap.sh`, shell);
 
 		const result: vscode.Task[] = [];
 		const default_options: vscode.ShellExecutionOptions = {
@@ -538,7 +529,7 @@ export async function getTasksListDev(dev_root: string): Promise<vscode.Task[]> 
 		const bootstrap_task = new vscode.Task({
 			'type': 'alan',
 			'task': 'fetch'
-		}, 'fetch','alan', new vscode.ShellExecution(`${bootstrap_sh}`, default_options), no_problem_matchers);
+		}, 'fetch','alan', new vscode.ShellExecution('${command:alan.dev.tasks.fetch}', default_options), no_problem_matchers);
 		default_options.cwd = dev_root;
 		bootstrap_task.group = vscode.TaskGroup.Clean; //??
 		bootstrap_task.presentationOptions = {

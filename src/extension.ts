@@ -112,7 +112,7 @@ async function resolveContextRoot(context, root_marker: string): Promise<string>
 	if (active_file) {
 		const active_file_dirname = path.dirname(active_file);
 		return tasks.resolveRoot(active_file_dirname, root_marker);
-	} else if (vscode.workspace.workspaceFolders) {
+	} else if (vscode.workspace.workspaceFolders.length === 1) {
 		const workspace_path = vscode.workspace.workspaceFolders[0].uri.fsPath; //Hmmm..
 		return tasks.resolveRoot(workspace_path, root_marker);
 	}
@@ -351,7 +351,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						case LSPContextType.alan: {
 							const path_deps = path.join(project_root.fsPath, "dependencies");
 							if (!fs.existsSync(path_deps) && auto_bootstrap) {
-								await tasks.bootstrap(project_root.fsPath, output_channel, diagnostic_collection);
+								await tasks.fetchDev(project_root.fsPath, output_channel, diagnostic_collection);
 							}
 						} break;
 						case LSPContextType.fabric: {
@@ -380,6 +380,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('setContext', 'alan.deploymentPackagingContexts', tasks.deploymentPackagingContexts);
 
 	const alan_resolve_err = "Unable to resolve `alan` script.";
+	const projectjson_resolve_err = "Unable to resolve `project.json` indicating the project root.";
 	let glob_script_args = {
 		cmd: ""
 	};
@@ -451,9 +452,33 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.dev.tasks.script', async (taskctx) => {
 			tasks.scriptDev(output_channel, diagnostic_collection, glob_script_args.cmd, taskctx[1]);
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.build', tasks.buildDev.bind(tasks.buildDev, output_channel, undefined)),
-		vscode.commands.registerCommand('alan.dev.tasks.test', tasks.testDev.bind(tasks.testDev, output_channel, diagnostic_collection)),
-
+		vscode.commands.registerCommand('alan.dev.tasks.fetch', async (taskctx) => {
+			try {
+				let alan_context = await resolveContext(taskctx, 'project.json');
+				tasks.fetchDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection);
+			} catch {
+				let error = `Fetch command failed. ${projectjson_resolve_err}`;
+				vscode.window.showErrorMessage(error);
+			}
+		}),
+		vscode.commands.registerCommand('alan.dev.tasks.build', async (taskctx) => {
+			try {
+				let alan_context = await resolveContext(taskctx, 'project.json');
+				tasks.buildDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection)
+			} catch {
+				let error = `Build command failed. ${projectjson_resolve_err}`;
+				vscode.window.showErrorMessage(error);
+			}
+		}),
+		vscode.commands.registerCommand('alan.dev.tasks.test', async (taskctx) => {
+			try {
+				let alan_context = await resolveContext(taskctx, 'project.json');
+				tasks.testDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection)
+			} catch {
+				let error = `Test command failed. ${projectjson_resolve_err}`;
+				vscode.window.showErrorMessage(error);
+			}
+		}),
 		vscode.tasks.registerTaskProvider('alan', {
 			provideTasks: async function () {
 				try { // alan projects
