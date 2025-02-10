@@ -278,8 +278,8 @@ async function getMigrationModel(shell: string, alan_root: string): Promise<stri
 async function getMigrationType(): Promise<string> {
 	const migration_type_bootstrap = 'initialization from empty dataset';
 	const migration_type = await vscode.window.showQuickPick([
-		migration_type_bootstrap,
-		'mapping from target conformant dataset'
+		'mapping from target conformant dataset',
+		migration_type_bootstrap
 	], {
 		placeHolder: 'migration type'
 	});

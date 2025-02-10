@@ -6,6 +6,7 @@
 - snippets change: exclude `: `
 - auto fetch: run `./alan fetch` or `./bootstrap.sh` when required dependencies are missing
 - auto fetch: configuration options to enable/disable it
+- list 'mapping from target conformant dataset' as first migration generation option
 
 ## 1.0.1
 - language server support for Windows
