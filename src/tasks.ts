@@ -79,8 +79,6 @@ function stripAnsi(string: string) {
 
 function executeCommand(shell_command: string, cwd: string, shell: string, output_channel: vscode.OutputChannel, diagnostics_collection?: vscode.DiagnosticCollection) : Promise<void> {
 	return new Promise((resolve, reject) => {
-		output_channel.clear();
-
 		if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('showTaskOutput')) {
 			output_channel.show(true);
 		}
