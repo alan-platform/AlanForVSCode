@@ -14,9 +14,44 @@ import {
 	LanguageClientOptions,
 	ServerOptions,
 	TransportKind,
-	State
+	State,
+	CompletionItemKind,
+	CompletionItem,
+	InsertTextFormat
 } from 'vscode-languageclient/node';
 import { url } from 'inspector';
+
+interface Snippet {
+	prefix: string,
+	body: string[],
+	description: string
+}
+interface Snippets {
+	[key: string]: Snippet
+}
+
+import snippets_model_application from './snippets/model.application.json';
+import snippets_interface_interface from './snippets/interface.interface.json';
+
+function parseSnippets(snippets: Snippets): vscode.CompletionItem[] {
+	return Object.keys(snippets).map(label => {
+		const s = snippets[label];
+		return {
+			"label": label,
+			"filterText": s.prefix,
+			"sortText": s.prefix,
+			"insertText": new vscode.SnippetString(s.body.join("\n")),
+			"kind": vscode.CompletionItemKind.Snippet,
+			"documentation": s.description
+		}
+	});
+}
+const snippets = new Map<string, vscode.CompletionItem[]>(
+	[
+		["application.alan", parseSnippets(snippets_model_application)],
+		["interface.alan", parseSnippets(snippets_interface_interface)]
+	]
+);
 
 enum LSPContextType {
 	alan = 'alan',
@@ -152,6 +187,12 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 	return client.state != State.Stopped;
 }
 
+/*
+TODO:
+- watch for creation of 'tool' file
+- if server stops because of missing files, restart when created? or server should watch itself...
+*/
+
 async function startTool(context: vscode.ExtensionContext, conf: string, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder) {
 	let tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
 	if (process.platform === 'win32')
@@ -256,6 +297,7 @@ async function useLegacyImpl(context: vscode.ExtensionContext, path: vscode.Uri)
 		}, '\'')
 }
 
+
 export function deactivate(): Thenable<void> | undefined {
 	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
 	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', false);
@@ -267,7 +309,7 @@ export function deactivate(): Thenable<void> | undefined {
 	return Promise.all(promises).then(() => undefined);
 }
 export async function activate(context: vscode.ExtensionContext) {
-	const walk = (dir, onfile: (err: NodeJS.ErrnoException|null, file?: string, type?: LSPContextType) => void) => {
+	const walk = (dir, onfile: (err: NodeJS.ErrnoException | null, file?: string, type?: LSPContextType) => void) => {
 		let results = {
 			alan: [],
 			fabric: []
@@ -326,6 +368,22 @@ export async function activate(context: vscode.ExtensionContext) {
 		cmd: ""
 	};
 	context.subscriptions.push(
+		vscode.languages.registerCompletionItemProvider({
+			"language": 'alan'
+		}, {
+			provideCompletionItems: (model, position) => {
+				// const wordrange = model.getWordRangeAtPosition(position);
+				const file = path.basename(model.fileName);
+				let file_snippets = snippets.get(file);
+				return {
+					items: file_snippets
+					// .map(s => {
+					// 	// s.range = wordrange
+					// 	return s;
+					// })
+				};
+			}
+		}),
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
 			const context_file = resolveContextFile(taskctx); // (connections.alan) file determines which deployment to build
 			if (context_file) {

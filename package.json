@@ -26,12 +26,6 @@
     ],
     "main": "./dist/extension",
     "contributes": {
-        "snippets": [
-            {
-                "language": "alan",
-                "path": "./snippets/model.application.json"
-            }
-        ],
         "taskDefinitions": [
             {
                 "type": "alan",
@@ -297,8 +291,8 @@
     },
     "devDependencies": {
         "@types/node": "^16.11.43",
-        "@types/vscode": "^1.62.0",
-        "@vscode/vsce": "^2.19.0",
+        "@types/vscode": "^1.97.0",
+        "@vscode/vsce": "^3.2.2",
         "ts-loader": "^9.4.2",
         "typescript": "^5.0.4",
         "webpack": "^5.83.1",

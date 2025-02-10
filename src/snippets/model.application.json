@@ -1,0 +1,93 @@
+{
+	"collection ['<key name>'] { ... }": {
+		"prefix": "collection",
+		"body": [
+			"collection ['${1:<key name>}'] {",
+			"\t'${1:<key name>}': text${0}",
+			"}"
+		],
+		"description": "collection"
+	},
+	"stategroup ( ... )": {
+		"prefix": "stategroup",
+		"body": [
+			"stategroup (",
+			"\t'${2:<state name>}' { $0}",
+			"\t'${3:<state name>}' { }",
+			")"
+		],
+		"description": "state group"
+	},
+	"number '<numerical-type>'": {
+		"prefix": "number",
+		"body": [
+			"number '${2:<numerical type>}'${0}"
+		],
+		"description": "number"
+	},
+	"number positive ''<numerical-type>'": {
+		"prefix": "number positive",
+		"body": [
+			"number positive '${2:<numerical type>}'${0}"
+		],
+		"description": "number with positive value (`>= 1`)"
+	},
+	"text -> ... []": {
+		"prefix": "text ->",
+		"body": [
+			"text -> ${1:<path to collection>}[]${0}"
+		],
+		"description": "text with mandatory reference"
+	},
+	"text ~> ... []": {
+		"prefix": "text ~>",
+		"body": [
+			"text ~> ${1:<path to collection>}[]${0}"
+		],
+		"description": "text with optional reference"
+	},
+	"group { ... }": {
+		"prefix": "group",
+		"body": [
+			"group {",
+			"\t$0",
+			"}"
+		],
+		"description": "group"
+	},
+	"reference-set -> ...": {
+		"prefix": "reference-set",
+		"body": [
+			"reference-set -> ${2:<path>} = inverse ${3:<reference to invert>}${0}"
+		],
+		"description": "reference-set"
+	},
+	"where '<rule name>' -> ...": {
+		"prefix": "where",
+		"body": [
+			"where '${1:<rule name>}' -> ${2:<expression>}${0}"
+		],
+		"description": "mandatory where-rule"
+	},
+	"where '<rule name>' ~> ...": {
+		"prefix": "where",
+		"body": [
+			"where '${1:<rule name>}' ~> ${2:<expression>}${0}"
+		],
+		"description": "optional where-rule"
+	},
+	"command { ... } => ...": {
+		"prefix": "command",
+		"body": [
+			"command { ${1}} => ${0}"
+		],
+		"description": "command"
+	},
+	"action": {
+		"prefix": "action",
+		"body": [
+			"action { ${1}} => ${0}"
+		],
+		"description": "action"
+	}
+}
