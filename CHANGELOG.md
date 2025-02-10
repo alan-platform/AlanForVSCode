@@ -4,6 +4,8 @@
 - language server support for nested Alan project directories: the extension starts a language server instance for each `versions.json` and `project.json` that is found
 - only show (applicable) snippets in `application.alan` and `interface.alan` files
 - snippets change: exclude `: `
+- auto fetch: run `./alan fetch` or `./bootstrap.sh` when required dependencies are missing
+- auto fetch: configuration options to enable/disable it
 
 ## 1.0.1
 - language server support for Windows

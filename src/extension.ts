@@ -308,6 +308,12 @@ export function deactivate(): Thenable<void> | undefined {
 	return Promise.all(promises).then(() => undefined);
 }
 export async function activate(context: vscode.ExtensionContext) {
+	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
+	const output_channel = vscode.window.createOutputChannel('Alan');
+
+	const auto_bootstrap: boolean = vscode.workspace.getConfiguration('alan-definitions').get('alan-auto-bootstrap');
+	const auto_fetch: boolean = vscode.workspace.getConfiguration('alan-definitions').get('fabric-auto-fetch');
+
 	const walk = (dir, onfile: (err: NodeJS.ErrnoException | null, file?: string, type?: LSPContextType) => void) => {
 		let results = {
 			alan: [],
@@ -334,13 +340,27 @@ export async function activate(context: vscode.ExtensionContext) {
 	};
 
 	for (const workspace of vscode.workspace.workspaceFolders) {
-		walk(workspace.uri.fsPath, (err, file, type) => {
+		walk(workspace.uri.fsPath, async (err, file, type) => {
 			if (err) {
 				console.error(err);
 			}
 			else {
 				const project_root = vscode.Uri.parse(path.dirname(file));
 				try {
+					switch (type) {
+						case LSPContextType.alan: {
+							const path_deps = path.join(project_root.fsPath, "dependencies");
+							if (!fs.existsSync(path_deps) && auto_bootstrap) {
+								await tasks.bootstrap(project_root.fsPath, output_channel, diagnostic_collection);
+							}
+						} break;
+						case LSPContextType.fabric: {
+							const path_deps = path.join(project_root.fsPath, ".alan");
+							if (!fs.existsSync(path_deps) && auto_fetch) {
+								await tasks.fetch(project_root.fsPath, output_channel, diagnostic_collection);
+							}
+						} break;
+					}
 					startTool(context, type, project_root, workspace);
 				} catch {
 					useLegacyImpl(context, project_root);
@@ -348,9 +368,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		});
 	}
-
-	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
-	const output_channel = vscode.window.createOutputChannel('Alan');
 
 	const is_alan_deploy_supported: boolean = isAlanDeploySupported();
 	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', is_alan_deploy_supported);
@@ -504,10 +521,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 	);
-
-
-	vscode.commands.executeCommand('alan.tasks.fetch', 'alan.isAlanAppURLProvided', is_alan_appurl_provided);
-
 
 	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 4);
 	fetch_statusbar_item.command = 'alan.tasks.fetch';

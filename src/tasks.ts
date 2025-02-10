@@ -77,137 +77,143 @@ function stripAnsi(string: string) {
 	return string.replace(re_strip_ansi, '');
 }
 
-function executeCommand(shell_command: string, cwd: string, shell: string, output_channel: vscode.OutputChannel, diagnostics_collection?: vscode.DiagnosticCollection) {
-	output_channel.clear();
+function executeCommand(shell_command: string, cwd: string, shell: string, output_channel: vscode.OutputChannel, diagnostics_collection?: vscode.DiagnosticCollection) : Promise<void> {
+	return new Promise((resolve, reject) => {
+		output_channel.clear();
 
-	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('showTaskOutput')) {
-		output_channel.show(true);
-	}
+		if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('showTaskOutput')) {
+			output_channel.show(true);
+		}
 
-    diagnostics_collection?.clear();
+		diagnostics_collection?.clear();
 
-	output_channel.appendLine(`> Running '${shell_command}' in '${cwd}'`);
-    const child: proc.ChildProcess|undefined
-        = proc.spawn(shell, ['-c', shell_command], { cwd: cwd });
+		output_channel.appendLine(`> Running '${shell_command}' in '${cwd}'`);
+		const child: proc.ChildProcess|undefined
+			= proc.spawn(shell, ['-c', shell_command], { cwd: cwd });
 
-	if (child) {
-		child.on('error', err => {
-            const error = `Failure executing command '${shell_command}'.`;
-            output_channel.appendLine(error);
-		});
+		if (child) {
+			child.on('error', err => {
+				const error = `Failure executing command '${shell_command}'.`;
+				output_channel.appendLine(error);
+				reject();
+			});
 
-		let output_acc = '';
-		child.stdout.on('data', data => {
-			let string: string = bashPathsToWinPaths(data.toString(), shell);
-			string = stripAnsi(string);
-			string = rawLocationsToVScodeLocations(string);
+			let output_acc = '';
+			child.stdout.on('data', data => {
+				let string: string = bashPathsToWinPaths(data.toString(), shell);
+				string = stripAnsi(string);
+				string = rawLocationsToVScodeLocations(string);
 
-			output_channel.append(string);
-			output_acc += string;
-		});
+				output_channel.append(string);
+				output_acc += string;
+			});
 
-		child.stderr.on('data', data => {
-			let string: string = bashPathsToWinPaths(data.toString(), shell);
-			string = stripAnsi(string);
-			string = rawLocationsToVScodeLocations(string);
+			child.stderr.on('data', data => {
+				let string: string = bashPathsToWinPaths(data.toString(), shell);
+				string = stripAnsi(string);
+				string = rawLocationsToVScodeLocations(string);
 
-			output_channel.append(string);
-			output_acc += string;
-		});
+				output_channel.append(string);
+				output_acc += string;
+			});
 
-		child.on('close', retc => {
-			const diagnostics: [vscode.Uri, vscode.Diagnostic[]][] = [];
+			child.on('close', retc => {
+				const diagnostics: [vscode.Uri, vscode.Diagnostic[]][] = [];
 
-			{ // output parser
-				let current_diagnostic: vscode.Diagnostic | undefined;
-				const lines: String[] = output_acc.split('\n');
-				lines.forEach((line) => {
-					function getSeverity(severity: string): vscode.DiagnosticSeverity {
-						return severity == 'error' ?
-							vscode.DiagnosticSeverity.Error : severity === 'warning' ?
-								vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information
-					}
+				{ // output parser
+					let current_diagnostic: vscode.Diagnostic | undefined;
+					const lines: String[] = output_acc.split('\n');
+					lines.forEach((line) => {
+						function getSeverity(severity: string): vscode.DiagnosticSeverity {
+							return severity == 'error' ?
+								vscode.DiagnosticSeverity.Error : severity === 'warning' ?
+									vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information
+						}
 
-					const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan):([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
-                    {
-                        const range_match = line.match(re_range);
-                        if (range_match) {
-                            const file = vscode.Uri.file(range_match[1]);
-                            const line = parseInt(range_match[2], 10);
-                            const column = parseInt(range_match[3], 10);
-                            const endLine = parseInt(range_match[4], 10);
-                            const endColumn = parseInt(range_match[5], 10);
-                            const severity = range_match[6];
-                            const message = range_match[7];
+						const re_range: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan):([0-9]+):([0-9]+) to ([0-9]+):([0-9]+) (error|warning): (.*)/;
+						{
+							const range_match = line.match(re_range);
+							if (range_match) {
+								const file = vscode.Uri.file(range_match[1]);
+								const line = parseInt(range_match[2], 10);
+								const column = parseInt(range_match[3], 10);
+								const endLine = parseInt(range_match[4], 10);
+								const endColumn = parseInt(range_match[5], 10);
+								const severity = range_match[6];
+								const message = range_match[7];
 
-                            const range = new vscode.Range(line - 1, column - 1, endLine - 1, endColumn - 1);
-                            current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
-                            diagnostics.push([file, [current_diagnostic]]);
-                            return;
-                        }
-                    }
+								const range = new vscode.Range(line - 1, column - 1, endLine - 1, endColumn - 1);
+								current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
+								diagnostics.push([file, [current_diagnostic]]);
+								return;
+							}
+						}
 
-					const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan):([0-9]+):([0-9]+) (error|warning): (.*)/;
-                    {
-                        const locat_match = line.match(re_locat);
-                        if (locat_match) {
-                            const file = vscode.Uri.file(locat_match[1]);
-                            const line = parseInt(locat_match[2], 10);
-                            const column = parseInt(locat_match[3], 10);
-                            const severity = locat_match[4];
-                            const message = locat_match[5];
+						const re_locat: RegExp = /^((?:\/|[a-zA-Z]:).*\.alan):([0-9]+):([0-9]+) (error|warning): (.*)/;
+						{
+							const locat_match = line.match(re_locat);
+							if (locat_match) {
+								const file = vscode.Uri.file(locat_match[1]);
+								const line = parseInt(locat_match[2], 10);
+								const column = parseInt(locat_match[3], 10);
+								const severity = locat_match[4];
+								const message = locat_match[5];
 
-                            const range = new vscode.Range(line - 1, column - 1, line - 1, column - 1);
-                            current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
-                            diagnostics.push([file, [current_diagnostic]]);
-                            return;
-                        }
-                    }
+								const range = new vscode.Range(line - 1, column - 1, line - 1, column - 1);
+								current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
+								diagnostics.push([file, [current_diagnostic]]);
+								return;
+							}
+						}
 
-                    const re_link: RegExp = /^((?:\/|[a-zA-Z]:).*\.link) (error|warning): (.*)/;
-                    {
-                        const link_match = line.match(re_link);
-                        if (link_match) {
-                            const file = vscode.Uri.file(link_match[1]);
-                            const severity = link_match[2];
-                            const message = link_match[3];
+						const re_link: RegExp = /^((?:\/|[a-zA-Z]:).*\.link) (error|warning): (.*)/;
+						{
+							const link_match = line.match(re_link);
+							if (link_match) {
+								const file = vscode.Uri.file(link_match[1]);
+								const severity = link_match[2];
+								const message = link_match[3];
 
-                            const range = new vscode.Range(0, 0, 0, 0);
-                            current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
-                            diagnostics.push([file, [current_diagnostic]]);
-                            return;
-                        }
-                    }
+								const range = new vscode.Range(0, 0, 0, 0);
+								current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
+								diagnostics.push([file, [current_diagnostic]]);
+								return;
+							}
+						}
 
-                    const re_other: RegExp = /^((?:\/|[a-zA-Z]:).*) (error|warning): (.*)/;
-                    {
-                        const other_match = line.match(re_other);
-                        if (other_match) {
-                            const file = vscode.Uri.file(other_match[1]);
-                            const severity = other_match[2];
-                            const message = other_match[3];
+						const re_other: RegExp = /^((?:\/|[a-zA-Z]:).*) (error|warning): (.*)/;
+						{
+							const other_match = line.match(re_other);
+							if (other_match) {
+								const file = vscode.Uri.file(other_match[1]);
+								const severity = other_match[2];
+								const message = other_match[3];
 
-                            const range = new vscode.Range(0, 0, 0, 0);
-                            current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
-                            diagnostics.push([file, [current_diagnostic]]);
-                            return;
-                        }
-                    }
+								const range = new vscode.Range(0, 0, 0, 0);
+								current_diagnostic = new vscode.Diagnostic(range, message, getSeverity(severity));
+								diagnostics.push([file, [current_diagnostic]]);
+								return;
+							}
+						}
 
-					if (current_diagnostic && line.startsWith('\t')) {
-						current_diagnostic.message += '\n' + line;
-					} else {
-						current_diagnostic = undefined;
-					}
-				});
-			}
+						if (current_diagnostic && line.startsWith('\t')) {
+							current_diagnostic.message += '\n' + line;
+						} else {
+							current_diagnostic = undefined;
+						}
+					});
+				}
 
-			diagnostics_collection?.set(diagnostics);
-		});
-	} else {
-        const error = `Unable to execute command '${shell_command}'.`;
-        output_channel.appendLine(error);
-	}
+				diagnostics_collection?.set(diagnostics);
+
+				resolve();
+			});
+		} else {
+			const error = `Unable to execute command '${shell_command}'.`;
+			output_channel.appendLine(error);
+			reject();
+		}
+	});
 }
 
 async function getMigrationName(shell: string, alan_root: string): Promise<string> {
@@ -333,28 +339,35 @@ export async function generateMigration(working_dir: string, alan_root: string, 
 	}
 }
 
-export async function build(working_dir: string, alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function build(working_dir: string, alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection): Promise<void> {
 	const shell = await resolveBashShell();
 	const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
-	executeCommand(`${alan} build`, working_dir, shell, output_channel, diagnostics_collection);
+	return executeCommand(`${alan} build`, working_dir, shell, output_channel, diagnostics_collection);
 }
 
-export async function package_deployment(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function package_deployment(src: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection): Promise<void> {
 	const shell = await resolveBashShell();
 
 	const active_file_dirname = path.dirname(src);
 	const active_file_dirname_bash = pathToBashPath(active_file_dirname, shell);
 	const alan_root = await resolveRoot(active_file_dirname, 'alan');
 
-	executeCommand(`./alan package ./dist/project.pkg ${active_file_dirname_bash}`, alan_root, shell, output_channel, diagnostics_collection);
+	return executeCommand(`./alan package ./dist/project.pkg ${active_file_dirname_bash}`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
-export async function fetch(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {
+export async function fetch(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection): Promise<void> {
 	const shell = await resolveBashShell();
 	const alan = pathToBashPath(`${alan_root}/alan`, shell);
 
-	executeCommand(`${alan} fetch`, alan_root, shell, output_channel, diagnostics_collection);
+	return executeCommand(`${alan} fetch`, alan_root, shell, output_channel, diagnostics_collection);
+}
+
+export async function bootstrap(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection): Promise<void> {
+	const shell = await resolveBashShell();
+	const alan = pathToBashPath(`${alan_root}/bootstrap.sh`, shell);
+
+	return executeCommand(`${alan}`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
 export async function deploy(alan_root: string, output_channel: vscode.OutputChannel, diagnostics_collection: vscode.DiagnosticCollection) {

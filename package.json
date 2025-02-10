@@ -202,6 +202,16 @@
                     "type": "string",
                     "default": null,
                     "description": "Directory for logging output from the build tools, for debugging purposes."
+                },
+                "alan-definitions.fabric-auto-fetch": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run alan fetch on startup when the `.alan` directory does not exist."
+                },
+                "alan-definitions.alan-auto-bootstrap": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run bootstrap.sh on startup when the `dependencies` directory does not exist."
                 }
             }
         },
