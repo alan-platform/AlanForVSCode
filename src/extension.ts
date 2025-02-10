@@ -173,6 +173,7 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 		// console.log(`state: ${e.oldState} => ${e.newState}`);
 		switch (e.newState) {
 			case State.Stopped:
+				clients.delete(project_root.fsPath);
 				useLegacyImpl(context, project_root);
 				break;
 			case State.Running:
@@ -181,8 +182,6 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 		}
 	});
 	await client.start();
-
-	clients.set(project_root.toString(), client);
 
 	return client.state != State.Stopped;
 }
@@ -505,6 +504,10 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 	);
+
+
+	vscode.commands.executeCommand('alan.tasks.fetch', 'alan.isAlanAppURLProvided', is_alan_appurl_provided);
+
 
 	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 4);
 	fetch_statusbar_item.command = 'alan.tasks.fetch';
