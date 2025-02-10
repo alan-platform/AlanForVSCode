@@ -301,7 +301,7 @@
     },
     "devDependencies": {
         "@types/node": "^16.11.43",
-        "@types/vscode": "^1.97.0",
+        "@types/vscode": "^1.62.0",
         "@vscode/vsce": "^3.2.2",
         "ts-loader": "^9.4.2",
         "typescript": "^5.0.4",
