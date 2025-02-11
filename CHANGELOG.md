@@ -3,6 +3,7 @@
 ## 1.0.5
 - synchronous initialization
 - separate tasks for alan meta from alan fabric
+- drop `alan-script`
 
 ## 1.0.4
 - fix language server support for Windows
@@ -27,7 +28,6 @@
   - `alan`: build tool/language server for Alan meta projects
   - `fabric`: build tool/language server for Alan platform projects
   - `alan-capture`: path to store language server logs for debugging purposes
-- add task type `alan-script`
 - improve fuzzy definition search
 
 ## 0.4.22

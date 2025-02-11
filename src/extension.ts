@@ -507,38 +507,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			resolveTask(task: vscode.Task): vscode.Task | undefined {
 				return undefined;
 			}
-		}),
-		vscode.tasks.registerTaskProvider('alan-script', {
-			provideTasks: async function () {
-				return [
-					new vscode.Task(
-						{
-							'type': 'alan-script',
-							'task': 'shell',
-							'command': `./test.sh`
-						},
-						vscode.TaskScope.Workspace,
-						'script',
-						'alan',
-						new vscode.ShellExecution(`./test.sh`, {}),
-						[]
-					)
-				];
-			},
-			resolveTask(_task: vscode.Task): vscode.Task | undefined {
-				const cmd = (<any>_task.definition).command;
-				glob_script_args.cmd = cmd;
-				return new vscode.Task(
-					_task.definition,
-					vscode.TaskScope.Workspace,
-					'test-trans',
-					'alan',
-					new vscode.ShellExecution('${command:alan-meta.tasks.script}', {}),
-					[]
-				);
-				return undefined;
-			}
-		}),
+		})
 	);
 
 	const fetch_statusbar_item: vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 4);

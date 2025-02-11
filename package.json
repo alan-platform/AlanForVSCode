@@ -50,18 +50,6 @@
                         "description": "The Alan task to customize"
                     }
                 }
-            },
-            {
-                "type": "alan-script",
-                "required": [
-                    "command"
-                ],
-                "properties": {
-                    "command": {
-                        "type": "string",
-                        "description": "The command to run"
-                    }
-                }
             }
         ],
         "menus": {
