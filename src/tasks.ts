@@ -396,10 +396,7 @@ export async function resolveRoot(file_dir: string, root_marker: string) : Promi
 	});
 }
 
-export async function getTasksList(alan_root: string, deploy_supported: boolean, show_supported: boolean): Promise<vscode.Task[]> {
-	const workspace_root = vscode.workspace.rootPath;
-	if (!workspace_root) return [];
-
+export async function getTasksList(deploy_supported: boolean, show_supported: boolean): Promise<vscode.Task[]> {
 	try {
 		const shell = await resolveBashShell();
 
@@ -411,27 +408,23 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean,
 		const no_problem_matchers = []; // prevent popup to scan task output
 
 		const fetch_task = new vscode.Task({
-			'type': 'alan',
-			'task': 'fetch'
+			'type': 'alan'
 		}, 'fetch','alan', new vscode.ShellExecution('${command:alan.tasks.fetch}', default_options), no_problem_matchers);
 		fetch_task.group = vscode.TaskGroup.Clean; //??
 
 		const build_task = new vscode.Task({
-			'type': 'alan',
-			'task': 'build'
+			'type': 'alan'
 		}, 'build','alan', new vscode.ShellExecution('${command:alan.tasks.build}', default_options), no_problem_matchers);
 		build_task.group = vscode.TaskGroup.Build;
 
 		const migration_task = new vscode.Task({
-			'type': 'alan',
-			'task': 'generate migration'
+			'type': 'alan'
 		}, 'generate migration', 'alan', new vscode.ShellExecution('${command:alan.tasks.generateMigration}', default_options), no_problem_matchers);
 		migration_task.group = vscode.TaskGroup.Clean; //??
 
 		const shell_task = new vscode.Task(
 			{
-				'type': 'alan',
-				'task': 'shell'
+				'type': 'alan'
 			},
 			vscode.TaskScope.Workspace,
 			'script',
@@ -455,8 +448,7 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean,
 
 		if (vscode.window.activeTextEditor && deploymentPackagingContexts[path.basename(vscode.window.activeTextEditor.document.uri.fsPath)] !== undefined) {
 			const package_task = new vscode.Task({
-				'type': 'alan',
-				'task': 'package'
+				'type': 'alan'
 			}, 'package', 'alan', new vscode.ShellExecution('${command:alan.tasks.package}', default_options), no_problem_matchers);
 			package_task.group = vscode.TaskGroup.Build;
 			result.push(package_task);
@@ -464,8 +456,7 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean,
 
 		if (deploy_supported) {
 			const deploy_task = new vscode.Task({
-				'type': 'alan',
-				'task': 'deploy'
+				'type': 'alan'
 			}, 'deploy', 'alan', new vscode.ShellExecution('${command:alan.tasks.deploy}', default_options), no_problem_matchers);
 			deploy_task.group = vscode.TaskGroup.Test;
 			result.push(deploy_task);
@@ -473,8 +464,7 @@ export async function getTasksList(alan_root: string, deploy_supported: boolean,
 
 		if (show_supported) {
 			const deploy_task = new vscode.Task({
-				'type': 'alan',
-				'task': 'show'
+				'type': 'alan'
 			}, 'deploy', 'alan', new vscode.ShellExecution('${command:alan.tasks.show}', default_options), no_problem_matchers);
 			deploy_task.group = vscode.TaskGroup.Test;
 			result.push(deploy_task);
@@ -509,7 +499,7 @@ export async function testDev(alan_root: string, output_channel: vscode.OutputCh
 	executeCommand(`${test_sh}`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
-export async function getTasksListDev(dev_root: string): Promise<vscode.Task[]> {
+export async function getTasksListDev(): Promise<vscode.Task[]> {
 	const workspace_root = vscode.workspace.rootPath;
 	if (!workspace_root) return [];
 
@@ -525,10 +515,9 @@ export async function getTasksListDev(dev_root: string): Promise<vscode.Task[]> 
 		const no_problem_matchers = []; // prevent popup to scan task output
 
 		const bootstrap_task = new vscode.Task({
-			'type': 'alan',
+			'type': 'alan-meta',
 			'task': 'fetch'
-		}, 'fetch','alan', new vscode.ShellExecution('${command:alan.dev.tasks.fetch}', default_options), no_problem_matchers);
-		default_options.cwd = dev_root;
+		}, 'fetch','alan-meta', new vscode.ShellExecution('${command:alan-meta.tasks.fetch}', default_options), no_problem_matchers);
 		bootstrap_task.group = vscode.TaskGroup.Clean; //??
 		bootstrap_task.presentationOptions = {
 			'clear': true,
@@ -538,15 +527,15 @@ export async function getTasksListDev(dev_root: string): Promise<vscode.Task[]> 
 		};
 
 		const build_task = new vscode.Task({
-			'type': 'alan',
+			'type': 'alan-meta',
 			'task': 'build'
-		}, 'build','alan', new vscode.ShellExecution('${command:alan.dev.tasks.build}', default_options), no_problem_matchers);
+		}, 'build','alan-meta', new vscode.ShellExecution('${command:alan-meta.tasks.build}', default_options), no_problem_matchers);
 		build_task.group = vscode.TaskGroup.Build;
 
 		const test_task = new vscode.Task({
-			'type': 'alan',
+			'type': 'alan-meta',
 			'task': 'test'
-		}, 'test', 'alan', new vscode.ShellExecution('${command:alan.dev.tasks.test}', default_options), no_problem_matchers);
+		}, 'test', 'alan-meta', new vscode.ShellExecution('${command:alan-meta.tasks.test}', default_options), no_problem_matchers);
 		test_task.group = vscode.TaskGroup.Test;
 
 		result.push(bootstrap_task);

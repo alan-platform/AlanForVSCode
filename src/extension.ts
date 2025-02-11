@@ -314,59 +314,64 @@ export async function activate(context: vscode.ExtensionContext) {
 	const auto_bootstrap: boolean = vscode.workspace.getConfiguration('alan-definitions').get('alan-auto-bootstrap');
 	const auto_fetch: boolean = vscode.workspace.getConfiguration('alan-definitions').get('fabric-auto-fetch');
 
-	const walk = (dir, onfile: (err: NodeJS.ErrnoException | null, file?: string, type?: LSPContextType) => void) => {
-		let results = {
-			alan: [],
-			fabric: []
-		};
-		fs.readdir(dir, (err, list) => {
-			if (err) return onfile(err);
-			list.forEach((fname) => {
-				const file = path.resolve(dir, fname);
-				fs.stat(file, function (err, stat) {
-					if (stat && stat.isDirectory()) {
-						walk(file, onfile);
-					} else {
-						if (fname === "project.json") {
-							onfile(null, file, LSPContextType.alan);
-						}
-						else if (fname === "versions.json") {
-							onfile(null, file, LSPContextType.fabric);
-						}
-					}
-				});
-			});
-		});
+	interface ProjectDetails {
+		uri: vscode.Uri;
+		workspace: vscode.WorkspaceFolder;
+	};
+	let projects: {
+		alan: ProjectDetails[]
+		fabric: ProjectDetails[]
+	} = {
+		alan: [],
+		fabric: []
 	};
 
 	for (const workspace of vscode.workspace.workspaceFolders) {
-		walk(workspace.uri.fsPath, async (err, file, type) => {
-			if (err) {
-				console.error(err);
-			}
-			else {
-				const project_root = vscode.Uri.file(path.dirname(file));
-				try {
-					switch (type) {
-						case LSPContextType.alan: {
-							const path_deps = path.join(project_root.fsPath, "dependencies");
-							if (!fs.existsSync(path_deps) && auto_bootstrap) {
-								await tasks.fetchDev(project_root.fsPath, output_channel, diagnostic_collection);
-							}
-						} break;
-						case LSPContextType.fabric: {
-							const path_deps = path.join(project_root.fsPath, ".alan");
-							if (!fs.existsSync(path_deps) && auto_fetch) {
-								await tasks.fetch(project_root.fsPath, output_channel, diagnostic_collection);
-							}
-						} break;
-					}
-					startTool(context, type, project_root, workspace);
-				} catch {
-					useLegacyImpl(context, project_root);
+		let walk = (dir: string) => fs.readdirSync(dir).forEach(fname => {
+			const inode = path.resolve(dir, fname);
+			const stat = fs.statSync(inode);
+			if (stat && stat.isDirectory()) {
+				walk(inode);
+			} else {
+				if (fname === "project.json") {
+					projects.alan.push({
+						uri: vscode.Uri.file(dir),
+						workspace: workspace
+					});
+				}
+				else if (fname === "versions.json") {
+					projects.fabric.push({
+						uri: vscode.Uri.file(dir),
+						workspace: workspace
+					});
 				}
 			}
 		});
+		walk(workspace.uri.fsPath);
+	}
+
+	for (const proj of projects.alan) {
+		try {
+			const path_deps = path.join(proj.uri.fsPath, "dependencies");
+			if (!fs.existsSync(path_deps) && auto_bootstrap) {
+				await tasks.fetchDev(proj.uri.fsPath, output_channel, diagnostic_collection);
+			}
+			startTool(context, LSPContextType.alan, proj.uri, proj.workspace);
+		} catch {
+			useLegacyImpl(context, proj.uri);
+		}
+	}
+
+	for (const proj of projects.fabric) {
+		try {
+			const path_deps = path.join(proj.uri.fsPath, ".alan");
+			if (!fs.existsSync(path_deps) && auto_fetch) {
+				await tasks.fetch(proj.uri.fsPath, output_channel, diagnostic_collection);
+			}
+			startTool(context, LSPContextType.fabric, proj.uri, proj.workspace);
+		} catch {
+			useLegacyImpl(context, proj.uri);
+		}
 	}
 
 	const is_alan_deploy_supported: boolean = isAlanDeploySupported();
@@ -449,10 +454,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.show', async (taskctx) => {
 			tasks.show();
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.script', async (taskctx) => {
+		vscode.commands.registerCommand('alan-meta.tasks.script', async (taskctx) => {
 			tasks.scriptDev(output_channel, diagnostic_collection, glob_script_args.cmd, taskctx[1]);
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.fetch', async (taskctx) => {
+		vscode.commands.registerCommand('alan-meta.tasks.fetch', async (taskctx) => {
 			try {
 				let alan_context = await resolveContext(taskctx, 'project.json');
 				tasks.fetchDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection);
@@ -461,7 +466,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.window.showErrorMessage(error);
 			}
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.build', async (taskctx) => {
+		vscode.commands.registerCommand('alan-meta.tasks.build', async (taskctx) => {
 			try {
 				let alan_context = await resolveContext(taskctx, 'project.json');
 				tasks.buildDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection)
@@ -470,7 +475,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				vscode.window.showErrorMessage(error);
 			}
 		}),
-		vscode.commands.registerCommand('alan.dev.tasks.test', async (taskctx) => {
+		vscode.commands.registerCommand('alan-meta.tasks.test', async (taskctx) => {
 			try {
 				let alan_context = await resolveContext(taskctx, 'project.json');
 				tasks.testDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection)
@@ -482,22 +487,27 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.tasks.registerTaskProvider('alan', {
 			provideTasks: async function () {
 				try { // alan projects
-					let alan_root = await resolveContextRoot(undefined, 'alan');
-					return tasks.getTasksList(alan_root, is_alan_deploy_supported, is_alan_appurl_provided);
+					return tasks.getTasksList(is_alan_deploy_supported, is_alan_appurl_provided);
 				} catch {
-					try { // alan dev/meta projects
-						let alan_root = await resolveContextRoot(undefined, 'project.json');
-						return tasks.getTasksListDev(alan_root);
-					} catch {
-						return [];
-					}
+					return [];
 				}
 			},
 			resolveTask(task: vscode.Task): vscode.Task | undefined {
 				return undefined;
 			}
 		}),
-
+		vscode.tasks.registerTaskProvider('alan-meta', {
+			provideTasks: async function () {
+				try {
+					return tasks.getTasksListDev();
+				} catch {
+					return [];
+				}
+			},
+			resolveTask(task: vscode.Task): vscode.Task | undefined {
+				return undefined;
+			}
+		}),
 		vscode.tasks.registerTaskProvider('alan-script', {
 			provideTasks: async function () {
 				return [
@@ -539,7 +549,7 @@ export async function activate(context: vscode.ExtensionContext) {
 					vscode.TaskScope.Workspace,
 					'test-trans',
 					'alan',
-					new vscode.ShellExecution('${command:alan.dev.tasks.script}', {}),
+					new vscode.ShellExecution('${command:alan-meta.tasks.script}', {}),
 					[]
 				);
 				return undefined;

@@ -40,6 +40,18 @@
                 }
             },
             {
+                "type": "alan-meta",
+                "required": [
+                    "task"
+                ],
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The Alan task to customize"
+                    }
+                }
+            },
+            {
                 "type": "alan-script",
                 "required": [
                     "command"
