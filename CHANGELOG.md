@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.4
+- fix language server support for Windows
+
 ## 1.0.3
 - fix highlighting of keyword `action`
 
