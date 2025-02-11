@@ -1,9 +1,12 @@
 # Change Log
 
+## 1.0.6
+- drop `alan-script`
+- code cleanup
+
 ## 1.0.5
 - synchronous initialization
 - separate tasks for alan meta from alan fabric
-- drop `alan-script`
 
 ## 1.0.4
 - fix language server support for Windows
