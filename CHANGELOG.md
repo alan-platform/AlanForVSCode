@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.5
+- synchronous initialization
+- separate tasks for alan meta from alan fabric
+
 ## 1.0.4
 - fix language server support for Windows
 
