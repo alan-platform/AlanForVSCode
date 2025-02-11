@@ -91,7 +91,7 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 
 		if (child) {
 			child.on('error', err => {
-				const error = `Failure executing command '${shell_command}'.`;
+				const error = `Failure executing command '${shell_command}'. ${err.stack}`;
 				output_channel.appendLine(error);
 				reject();
 			});
