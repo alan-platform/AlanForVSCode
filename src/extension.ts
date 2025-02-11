@@ -524,22 +524,6 @@ export async function activate(context: vscode.ExtensionContext) {
 						[]
 					)
 				];
-				// const tasks = await fs.promises
-				// 	.readdir(this.workspaceRoot)
-				// 	.then(files =>
-				// 		files.filter(f => path.extname(f) == ".sh").map(f => new vscode.Task(
-				// 			{
-				// 				'type': 'alan-script',
-				// 				'task': 'shell',
-				// 				'command': `./${f}`
-				// 			},
-				// 			vscode.TaskScope.Workspace,
-				// 			'script',
-				// 			'alan',
-				// 			new vscode.ShellExecution(`./${f}`, {}),
-				// 			[]
-				// 		)));
-				// return tasks;
 			},
 			resolveTask(_task: vscode.Task): vscode.Task | undefined {
 				const cmd = (<any>_task.definition).command;
