@@ -345,7 +345,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				console.error(err);
 			}
 			else {
-				const project_root = vscode.Uri.parse(path.dirname(file));
+				const project_root = vscode.Uri.file(path.dirname(file));
 				try {
 					switch (type) {
 						case LSPContextType.alan: {
