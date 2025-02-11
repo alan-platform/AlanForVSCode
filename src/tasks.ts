@@ -485,7 +485,7 @@ export async function testDev(alan_root: string, output_channel: vscode.OutputCh
 	executeCommand(`${test_sh}`, alan_root, shell, output_channel, diagnostics_collection);
 }
 
-export async function getTasksListDev(): Promise<vscode.Task[]> {
+export async function getTasksListDev(mixed_mode_suffix: string): Promise<vscode.Task[]> {
 	try {
 		const shell = await resolveBashShell();
 
@@ -498,9 +498,9 @@ export async function getTasksListDev(): Promise<vscode.Task[]> {
 		const no_problem_matchers = []; // prevent popup to scan task output
 
 		const bootstrap_task = new vscode.Task({
-			'type': 'alan-meta',
-			'task': 'fetch'
-		}, 'fetch','alan-meta', new vscode.ShellExecution('${command:alan-meta.tasks.fetch}', default_options), no_problem_matchers);
+			'type': 'alan',
+			'task': `fetch${mixed_mode_suffix}`
+		}, `fetch${mixed_mode_suffix}`,'alan', new vscode.ShellExecution('${command:alan.meta.tasks.fetch}', default_options), no_problem_matchers);
 		bootstrap_task.group = vscode.TaskGroup.Clean; //??
 		bootstrap_task.presentationOptions = {
 			'clear': true,
@@ -510,15 +510,15 @@ export async function getTasksListDev(): Promise<vscode.Task[]> {
 		};
 
 		const build_task = new vscode.Task({
-			'type': 'alan-meta',
-			'task': 'build'
-		}, 'build','alan-meta', new vscode.ShellExecution('${command:alan-meta.tasks.build}', default_options), no_problem_matchers);
+			'type': 'alan',
+			'task': `build${mixed_mode_suffix}`
+		}, `build${mixed_mode_suffix}`,'alan', new vscode.ShellExecution('${command:alan.meta.tasks.build}', default_options), no_problem_matchers);
 		build_task.group = vscode.TaskGroup.Build;
 
 		const test_task = new vscode.Task({
-			'type': 'alan-meta',
-			'task': 'test'
-		}, 'test', 'alan-meta', new vscode.ShellExecution('${command:alan-meta.tasks.test}', default_options), no_problem_matchers);
+			'type': 'alan',
+			'task': `test${mixed_mode_suffix}`
+		}, `test${mixed_mode_suffix}`, 'alan', new vscode.ShellExecution('${command:alan.meta.tasks.test}', default_options), no_problem_matchers);
 		test_task.group = vscode.TaskGroup.Test;
 
 		result.push(bootstrap_task);

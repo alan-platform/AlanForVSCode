@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.7
+- use a single task provider for meta and fabric projects
+
 ## 1.0.6
 - drop `alan-script`
 - code cleanup

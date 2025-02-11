@@ -7,7 +7,7 @@
         "color": "#1e1e1e",
         "theme": "dark"
     },
-    "version": "1.0.6",
+    "version": "1.0.7",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -29,18 +29,6 @@
         "taskDefinitions": [
             {
                 "type": "alan",
-                "required": [
-                    "task"
-                ],
-                "properties": {
-                    "task": {
-                        "type": "string",
-                        "description": "The Alan task to customize"
-                    }
-                }
-            },
-            {
-                "type": "alan-meta",
                 "required": [
                     "task"
                 ],
