@@ -480,9 +480,6 @@ export async function testDev(alan_root: string, output_channel: vscode.OutputCh
 }
 
 export async function getTasksListDev(): Promise<vscode.Task[]> {
-	const workspace_root = vscode.workspace.rootPath;
-	if (!workspace_root) return [];
-
 	try {
 		const shell = await resolveBashShell();
 
