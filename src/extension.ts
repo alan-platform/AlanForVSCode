@@ -219,8 +219,10 @@ async function useLegacyImpl(context: vscode.ExtensionContext, path: vscode.Uri)
 	vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), new AlanSymbolProvider());
 }
 
-function identifierCompletionItemProvider(uri: vscode.Uri) {
-	return vscode.languages.registerCompletionItemProvider(getDocumentFilterForPath(uri), {
+function identifierCompletionItemProvider() {
+	return vscode.languages.registerCompletionItemProvider({
+		language: 'alan'
+	}, {
 		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
 			const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
 			if (!wrange)
@@ -305,7 +307,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	for (const proj of projects.alan) {
 		try {
 			const path_deps = path.join(proj.uri.fsPath, "dependencies");
-			context.subscriptions.push(identifierCompletionItemProvider(proj.uri));
 			if (!fs.existsSync(path_deps) && auto_bootstrap) {
 				await tasks.fetchDev(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}
@@ -318,7 +319,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	for (const proj of projects.fabric) {
 		try {
 			const path_deps = path.join(proj.uri.fsPath, ".alan");
-			context.subscriptions.push(identifierCompletionItemProvider(proj.uri));
 			if (!fs.existsSync(path_deps) && auto_fetch) {
 				await tasks.fetch(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}
@@ -360,6 +360,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				};
 			}
 		}),
+		identifierCompletionItemProvider(),
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
 			const context_file = resolveContextFile(taskctx); // (connections.alan) file determines which deployment to build
 			if (context_file) {
