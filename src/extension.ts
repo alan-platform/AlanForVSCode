@@ -216,86 +216,38 @@ async function useLegacyImpl(context: vscode.ExtensionContext, path: vscode.Uri)
 	}
 	context.subscriptions.push(vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions));
 
-	const symbol_provider = new AlanSymbolProvider();
-
-	vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), symbol_provider),
-		vscode.languages.registerCompletionItemProvider(getDocumentFilterForPath(path), {
-			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-				const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
-				if (!wrange)
-					return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
-
-				return symbol_provider.provideDocumentSymbols(document, token).then(symbols => {
-					let result: Map<string, vscode.CompletionItem> = new Map();
-					function flatten(symvs: vscode.DocumentSymbol[]) {
-						symvs.forEach(sym => {
-							function mapSymbolKind2CompletionItemKind(kind: vscode.SymbolKind) {
-								switch (kind) {
-									case vscode.SymbolKind.File:
-										return vscode.CompletionItemKind.File;
-									case vscode.SymbolKind.Module:
-										return vscode.CompletionItemKind.Module;
-									case vscode.SymbolKind.Namespace:
-										return vscode.CompletionItemKind.Module;
-									case vscode.SymbolKind.Class:
-										return vscode.CompletionItemKind.Class;
-									case vscode.SymbolKind.Method:
-										return vscode.CompletionItemKind.Method;
-									case vscode.SymbolKind.Enum:
-										return vscode.CompletionItemKind.Enum;
-									case vscode.SymbolKind.Interface:
-										return vscode.CompletionItemKind.Interface;
-									case vscode.SymbolKind.Function:
-										return vscode.CompletionItemKind.Function;
-									case vscode.SymbolKind.Variable:
-										return vscode.CompletionItemKind.Variable;
-									case vscode.SymbolKind.Constant:
-										return vscode.CompletionItemKind.Constant;
-									case vscode.SymbolKind.String:
-										return vscode.CompletionItemKind.Text;
-									case vscode.SymbolKind.Number:
-										return vscode.CompletionItemKind.Constant;
-									case vscode.SymbolKind.Array:
-										return vscode.CompletionItemKind.Property;
-									case vscode.SymbolKind.Event:
-										return vscode.CompletionItemKind.Event;
-									case vscode.SymbolKind.Operator:
-										return vscode.CompletionItemKind.Operator;
-									case vscode.SymbolKind.TypeParameter:
-										return vscode.CompletionItemKind.TypeParameter;
-									case vscode.SymbolKind.Struct:
-										return vscode.CompletionItemKind.Struct;
-									case vscode.SymbolKind.EnumMember:
-										return vscode.CompletionItemKind.EnumMember;
-									default:
-										return vscode.CompletionItemKind.Struct;
-								}
-							}
-							const existing_citem = result[sym.name];
-							const ckind = mapSymbolKind2CompletionItemKind(sym.kind);
-							if (existing_citem && existing_citem.kind === ckind) {
-								//skip
-							} else if (existing_citem && existing_citem.kind === vscode.CompletionItemKind.Struct) {
-								existing_citem.kind = ckind;
-							} else {
-								let item = new vscode.CompletionItem(sym.name, ckind);
-								item.insertText = `'${sym.name}'`;
-								item.filterText = `'${sym.name}'`;
-								item.detail = sym.detail;
-								item.range = wrange;
-								result.set(sym.name, item);
-							}
-							flatten(sym.children);
-						});
-					}
-
-					flatten(symbols);
-					return Array.from(result.values());
-				});
-			}
-		}, '\'')
+	vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), new AlanSymbolProvider());
 }
 
+function identifierCompletionItemProvider(uri: vscode.Uri) {
+	return vscode.languages.registerCompletionItemProvider(getDocumentFilterForPath(uri), {
+		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
+			const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
+			if (!wrange)
+				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
+
+			let result = new Set<string>;
+			var re = /^(?:\s*)('[^']*')/;
+			for (let i = 0; i < document.lineCount; ++i) {
+				const line: vscode.TextLine = document.lineAt(i);
+				var matches = line.text.match(re);
+				if (matches !== null && matches.length === 2) {
+					result.add(matches[1]);
+				}
+			}
+
+			return Array.from(result.values()).map(id => {
+				return {
+					"label": id,
+					"filterText": id,
+					"sortText": `~${id}`, /* push to end of list; language server suggestions should come first */
+					"insertText": id,
+					"kind": vscode.CompletionItemKind.Text,
+				}
+			})
+		}
+	}, '.', `'`);
+}
 
 export function deactivate(): Thenable<void> | undefined {
 	vscode.commands.executeCommand('setContext', 'alan.isAlanDeploySupported', false);
@@ -353,6 +305,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	for (const proj of projects.alan) {
 		try {
 			const path_deps = path.join(proj.uri.fsPath, "dependencies");
+			context.subscriptions.push(identifierCompletionItemProvider(proj.uri));
 			if (!fs.existsSync(path_deps) && auto_bootstrap) {
 				await tasks.fetchDev(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}
@@ -365,6 +318,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	for (const proj of projects.fabric) {
 		try {
 			const path_deps = path.join(proj.uri.fsPath, ".alan");
+			context.subscriptions.push(identifierCompletionItemProvider(proj.uri));
 			if (!fs.existsSync(path_deps) && auto_fetch) {
 				await tasks.fetch(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}

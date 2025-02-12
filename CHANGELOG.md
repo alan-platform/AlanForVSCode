@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.8
+- show identifier completions in addition to language server suggestions
+
 ## 1.0.7
 - use a single task provider for meta and fabric projects
 
