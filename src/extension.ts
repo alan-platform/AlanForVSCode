@@ -214,9 +214,9 @@ async function useLegacyImpl(context: vscode.ExtensionContext, path: vscode.Uri)
 			provideDefinition: fuzzyDefinitionSearch
 		}));
 	}
-	context.subscriptions.push(vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions));
-
-	vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), new AlanSymbolProvider());
+	context.subscriptions.push(
+		vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
+		vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), new AlanSymbolProvider()));
 }
 
 function identifierCompletionItemProvider() {
