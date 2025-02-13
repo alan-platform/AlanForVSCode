@@ -145,7 +145,6 @@ export async function manageLanguageServers(clients: Map<string, LanguageClient>
 			qp.onDidChangeActive(async (items) => {
 				if (items.length > 0) {
 					last_selection = items[0];
-					console.log(last_selection.label)
 				}
 			}),
 			qp.onDidAccept(async () => {
