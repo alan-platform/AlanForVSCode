@@ -276,10 +276,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		workspace: vscode.WorkspaceFolder;
 	};
 	let projects: {
-		alan: ProjectDetails[]
-		fabric: ProjectDetails[]
+		alan: ProjectDetails[] /* project.json contexts */
+		alan_build: ProjectDetails[] /* build.alan contexts */
+		fabric: ProjectDetails[] /* versions.json contexts */
 	} = {
 		alan: [],
+		alan_build: [],
 		fabric: []
 	};
 
@@ -292,6 +294,12 @@ export async function activate(context: vscode.ExtensionContext) {
 			} else {
 				if (fname === "project.json") {
 					projects.alan.push({
+						uri: vscode.Uri.file(dir),
+						workspace: workspace
+					});
+				}
+				else if (fname === "build.alan") {
+					projects.alan_build.push({
 						uri: vscode.Uri.file(dir),
 						workspace: workspace
 					});
@@ -313,6 +321,12 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (!fs.existsSync(path_deps) && auto_bootstrap) {
 				await tasks.fetchDev(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}
+		} catch {
+		}
+	}
+
+	for (const proj of projects.alan_build) {
+		try {
 			startTool(context, LSPContextType.alan, proj.uri, proj.workspace);
 		} catch {
 			useLegacyImpl(context, proj.uri);

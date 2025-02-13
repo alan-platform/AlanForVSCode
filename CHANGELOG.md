@@ -6,6 +6,7 @@
 - do not generate a migration when the migration generation wizard is aborted
 - list deployment type 'migrate' first
 - name for LS diagnostics and output
+- start a language server per `build.alan` file (not per `project.json` file)
 
 ## 1.0.8
 - show identifier completions in addition to language server suggestions
