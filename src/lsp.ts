@@ -132,7 +132,7 @@ export async function manageLanguageServers(clients: Map<string, LanguageClient>
 				const client: LanguageClient = o.item.client;
 				await performOperation(client, o.button.tooltip);
 				qp.hide();
-				manageLanguageServers(clients);
+				manage();
 			}),
 			qp.onDidTriggerButton(async (o) => {
 				await Promise.all(qp.items.map(async (item) => {
