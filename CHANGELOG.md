@@ -7,6 +7,8 @@
 - list deployment type 'migrate' first
 - name for LS diagnostics and output
 - start a language server per `build.alan` file (not per `project.json` file)
+- fallback to legacy mode when language server initialization fails
+- commands to manage and restart language servers
 
 ## 1.0.8
 - show identifier completions in addition to language server suggestions

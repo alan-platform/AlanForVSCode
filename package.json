@@ -126,6 +126,12 @@
                 {
                     "when": "resourceLangId == alan",
                     "command": "alan.editor.showDefinitions"
+                },
+                {
+                    "command": "alan.tasks.ls.manage"
+                },
+                {
+                    "command": "alan.tasks.ls.restartall"
                 }
             ]
         },
@@ -157,6 +163,14 @@
             {
                 "command": "alan.editor.showDefinitions",
                 "title": "Alan: Show Definitions"
+            },
+            {
+                "command": "alan.tasks.ls.manage",
+                "title": "Alan: Manage Language Servers"
+            },
+            {
+                "command": "alan.tasks.ls.restartall",
+                "title": "Alan: Restart All Language Servers"
             }
         ],
         "configuration": {

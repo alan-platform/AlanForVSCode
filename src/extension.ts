@@ -6,6 +6,7 @@ import * as tasks from './tasks';
 import * as fs from 'fs';
 import { showDefinitions, fuzzyDefinitionSearch } from './search';
 import { AlanSymbolProvider } from './symbols'
+import { manageLanguageServers, restartAllLanguageServers } from './lsp'
 
 import {
 	CloseAction,
@@ -166,26 +167,17 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 			index: workspace_folder.index
 		},
 		diagnosticCollectionName: name,
-		outputChannelName: name
+		outputChannelName: name,
+		initializationFailedHandler: (error) => {
+			vscode.window.showErrorMessage(`Failed to start Alan Language Server for ${project_root.fsPath}: ${error}`);
+			useLegacyImpl(context, project_root);
+			return false;
+		}
 	};
 
-	const client = new LanguageClient(`alan-language-server${clients.size}`, serverOptions, clientOptions);
+	const client = new LanguageClient(name, serverOptions, clientOptions);
 	clients.set(project_root.fsPath, client);
-
-	client.onDidChangeState((e) => {
-		// console.log(`state: ${e.oldState} => ${e.newState}`);
-		switch (e.newState) {
-			case State.Stopped:
-				clients.delete(project_root.fsPath);
-				useLegacyImpl(context, project_root);
-				break;
-			case State.Running:
-			case State.Starting:
-				break;
-		}
-	});
 	await client.start();
-
 	return client.state != State.Stopped;
 }
 
@@ -375,6 +367,12 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 		identifierCompletionItemProvider(),
+		vscode.commands.registerCommand('alan.tasks.ls.manage', async () => {
+			manageLanguageServers(clients);
+		}),
+		vscode.commands.registerCommand('alan.tasks.ls.restartall', async () => {
+			restartAllLanguageServers(clients);
+		}),
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
 			const context_file: string = resolveContextFile(taskctx);
 			if (context_file && path.basename(context_file) === 'deployment.alan') {
