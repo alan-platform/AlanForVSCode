@@ -359,11 +359,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		identifierCompletionItemProvider(),
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
-			const context_file = resolveContextFile(taskctx);
-			if (context_file && path.basename(taskctx.fsPath) === 'deployment.alan') {
+			const context_file: string = resolveContextFile(taskctx);
+			if (context_file && path.basename(context_file) === 'deployment.alan') {
 				tasks.package_deployment(context_file, output_channel, diagnostic_collection);
 			} else {
-				let error = 'Package command failed: context `deployment.alan` file could not be resolved.';
+				let error = 'Package command failed: `deployment.alan` file could not be resolved.';
 				vscode.window.showErrorMessage(error);
 			}
 		}),
