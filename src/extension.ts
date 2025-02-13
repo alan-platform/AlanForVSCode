@@ -140,6 +140,7 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 		serverOptions.args.push("--capture", capture);
 	}
 
+	const name: string = `Alan LS ${path.relative(workspace_folder.uri.fsPath, project_root.fsPath)}`;
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [getDocumentFilterForPath(project_root)],
 		errorHandler: {
@@ -161,9 +162,11 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 		},
 		workspaceFolder: {
 			uri: project_root,
-			name: `name${clients.size}`,
+			name: `${path.relative(workspace_folder.uri.fsPath, project_root.fsPath)}`,
 			index: workspace_folder.index
-		}
+		},
+		diagnosticCollectionName: name,
+		outputChannelName: name
 	};
 
 	const client = new LanguageClient(`alan-language-server${clients.size}`, serverOptions, clientOptions);

@@ -5,6 +5,7 @@
 - fix context for package command when `deployment.alan` is not opened
 - do not generate a migration when the migration generation wizard is aborted
 - list deployment type 'migrate' first
+- name for LS diagnostics and output
 
 ## 1.0.8
 - show identifier completions in addition to language server suggestions
