@@ -3,6 +3,8 @@
 ## 1.0.9
 - drop support for old `connections.alan` files
 - fix context for package command when `deployment.alan` is not opened
+- do not generate a migration when the migration generation wizard is aborted
+- list deployment type 'migrate' first
 
 ## 1.0.8
 - show identifier completions in addition to language server suggestions

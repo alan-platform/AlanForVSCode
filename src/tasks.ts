@@ -210,19 +210,21 @@ function executeCommand(shell_command: string, cwd: string, shell: string, outpu
 }
 
 async function getMigrationName(shell: string, alan_root: string): Promise<string> {
-	return new Promise(resolve => {
-		vscode.window.showInputBox({
+	return new Promise(async resolve => {
+		const migration_name_raw = await vscode.window.showInputBox({
 			value: 'from_empty',
 			valueSelection: [5,10],
 			placeHolder: `For example: <git commit id of 'from' model>`
-		}).then(migration_name_raw => {
-			const migration_name = sanitize(migration_name_raw);
-			resolve(pathToBashPath(`${alan_root}/migrations/${migration_name}`, shell));
 		});
+		if (migration_name_raw === undefined)
+			return;
+
+		const migration_name = sanitize(migration_name_raw);
+		resolve(pathToBashPath(`${alan_root}/migrations/${migration_name}`, shell));
 	});
 }
 async function getMigrationModel(shell: string, alan_root: string): Promise<string> {
-	return new Promise(resolve => {
+	return new Promise(async resolve => {
 		let models = [];
 		let model_path:((model:string) => string);
 
@@ -245,7 +247,7 @@ async function getMigrationModel(shell: string, alan_root: string): Promise<stri
 		}
 
 		if (models.length <= 0) {
-			let error = `Unable to resolve a 'systems/**/model.link' file,`
+			const error = `Unable to resolve a 'systems/**/model.link' file,`
 				+ ` which is required for generating a migration (or a 'model.lib.link'`
 				+ ` file for platform version < 2021.8). Make sure that you have a`
 				+ ` system to migrate from, and that you have run Alan Build.`
@@ -253,32 +255,40 @@ async function getMigrationModel(shell: string, alan_root: string): Promise<stri
 			return;
 		}
 
-		vscode.window.showQuickPick(models, {
+		const migration_model = await vscode.window.showQuickPick(models, {
 			placeHolder: 'migration target model'
-		}).then(migration_model => {
-			const model_file = model_path(migration_model);
-			fs.access(model_file, (err) => {
-				if (err) {
-					vscode.window.showErrorMessage(`Please run Alan Build to compile model '${migration_model}' first.`);
-				}
-				else {
-					resolve(pathToBashPath(model_file, shell));
-				}
-			});
+		});
+		if (migration_model === undefined)
+			return;
+
+		const model_file = model_path(migration_model);
+		fs.access(model_file, (err) => {
+			if (err) {
+				vscode.window.showErrorMessage(`Please run Alan Build to compile model '${migration_model}' first.`);
+			}
+			else {
+				resolve(pathToBashPath(model_file, shell));
+			}
 		});
 	});
 }
 async function getMigrationType(): Promise<string> {
-	const migration_type_bootstrap = 'initialization from empty dataset';
-	const migration_type = await vscode.window.showQuickPick([
-		'mapping from target conformant dataset',
-		migration_type_bootstrap
-	], {
-		placeHolder: 'migration type'
-	});
+	return new Promise(async resolve => {
+		const migration_type_bootstrap = 'initialization from empty dataset';
+		const migration_type = await vscode.window.showQuickPick([
+			'mapping from target conformant dataset',
+			migration_type_bootstrap
+		], {
+			placeHolder: 'migration type'
+		})
 
-	return migration_type === migration_type_bootstrap ? '--bootstrap' : '';
+		if (migration_type === undefined)
+			return;
+
+		resolve(migration_type === migration_type_bootstrap ? '--bootstrap' : '')
+	});
 }
+
 class DeployItem implements vscode.QuickPickItem {
 	label: string;
 	description?: string;
