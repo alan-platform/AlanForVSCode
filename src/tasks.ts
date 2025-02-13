@@ -294,11 +294,11 @@ class DeployItem implements vscode.QuickPickItem {
 	}
 }
 async function getDeployType(): Promise<string | undefined> {
-	const deploy_type_empty = new DeployItem('empty', 'Initialize with empty dataset', 'Use this for your first deployment or if you want to start over. This will remove all user data!');
 	const deploy_type_migrate = new DeployItem('migrate', 'Migrate from current version', 'This will migrate the data from the running version to your current application version.');
+	const deploy_type_empty = new DeployItem('empty', 'Initialize with empty dataset', 'Use this for your first deployment or if you want to start over. This will remove all user data!');
 	const deploy_type = await vscode.window.showQuickPick([
-		deploy_type_empty,
-		deploy_type_migrate
+		deploy_type_migrate,
+		deploy_type_empty
 	], {
 		placeHolder: 'data source for this deployment'
 	});
