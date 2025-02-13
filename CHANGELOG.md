@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.9
+- drop support for old connections.alan files
+- fix context for package command when `deployment.alan` is not opened
+
 ## 1.0.8
 - show identifier completions in addition to language server suggestions
 

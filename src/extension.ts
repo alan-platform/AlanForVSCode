@@ -81,8 +81,8 @@ function pathIsFSPath(inode_path: string): boolean {
 }
 
 function resolveContextFile(context): string | undefined {
-	if (context && context._fsPath && pathIsFSPath(context._fsPath))
-		return context._fsPath
+	if (context && context.fsPath && pathIsFSPath(context.fsPath))
+		return context.fsPath
 
 	if (vscode.window.activeTextEditor && pathIsFSPath(vscode.window.activeTextEditor.document.uri.fsPath))
 		return vscode.window.activeTextEditor.document.uri.fsPath;
@@ -335,9 +335,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('setContext', 'alan.isAlanAppURLProvided', is_alan_appurl_provided);
 
 
-	/* set contexts for the Alan Package command */
-	vscode.commands.executeCommand('setContext', 'alan.deploymentPackagingContexts', tasks.deploymentPackagingContexts);
-
 	const alan_resolve_err = "Unable to resolve `alan` script.";
 	const projectjson_resolve_err = "Unable to resolve `project.json` indicating the project root.";
 	let glob_script_args = {
@@ -362,11 +359,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		identifierCompletionItemProvider(),
 		vscode.commands.registerCommand('alan.tasks.package', (taskctx) => {
-			const context_file = resolveContextFile(taskctx); // (connections.alan) file determines which deployment to build
-			if (context_file) {
+			const context_file = resolveContextFile(taskctx);
+			if (context_file && path.basename(taskctx.fsPath) === 'deployment.alan') {
 				tasks.package_deployment(context_file, output_channel, diagnostic_collection);
 			} else {
-				let error = 'Package command failed: context `connections.alan` file could not be resolved.';
+				let error = 'Package command failed: context `deployment.alan` file could not be resolved.';
 				vscode.window.showErrorMessage(error);
 			}
 		}),
