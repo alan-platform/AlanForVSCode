@@ -132,7 +132,7 @@ export async function manageLanguageServers(clients: Map<string, LanguageClient>
 				const client: LanguageClient = o.item.client;
 				await performOperation(client, o.button.tooltip);
 				qp.hide();
-				manageLanguageServers(clients);
+				manage();
 			}),
 			qp.onDidTriggerButton(async (o) => {
 				await Promise.all(qp.items.map(async (item) => {
@@ -145,7 +145,6 @@ export async function manageLanguageServers(clients: Map<string, LanguageClient>
 			qp.onDidChangeActive(async (items) => {
 				if (items.length > 0) {
 					last_selection = items[0];
-					console.log(last_selection.label)
 				}
 			}),
 			qp.onDidAccept(async () => {
