@@ -1,6 +1,15 @@
 # Alan extension for VS Code
 
-Provides commands, task definitions, syntax highlighting, naive support for goto/peek definition, and an outline view for Alan files.
+Provides support for development on the [Alan platform](https://alan-platform.com/), powered by the Alan language server.
+
+## Features
+- syntax highlighting
+- code completion
+- goto/peek definition, implementation
+- find all references, symbol renaming, symbol navigation, outline view
+- types and documentation links on hover
+- various commands and tasks for building, packaging, and deploying an Alan application
+- ... and more
 
 ![Screenshot of the Alan extension for Visual Studio Code](./screenshot.png)
 
