@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.10
+- restart language client(s) and server(s) on fetch
+
 ## 1.0.9
 - drop support for old `connections.alan` files
 - fix context for package command when `deployment.alan` is not opened

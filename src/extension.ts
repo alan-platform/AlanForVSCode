@@ -18,7 +18,8 @@ import {
 	State,
 	CompletionItemKind,
 	CompletionItem,
-	InsertTextFormat
+	InsertTextFormat,
+	Disposable
 } from 'vscode-languageclient/node';
 import { url } from 'inspector';
 
@@ -57,7 +58,13 @@ const snippets = new Map<string, vscode.CompletionItem[]>(
 enum LSPContextType {
 	alan = 'alan',
 	fabric = 'fabric'
-}
+};
+
+interface ProjectDetails {
+	uri: vscode.Uri;
+	workspace: vscode.WorkspaceFolder;
+	subscriptions: Disposable[]
+};
 
 const clients = new Map<string, LanguageClient>();
 
@@ -126,13 +133,13 @@ function getDocumentFilterForPath(path: vscode.Uri) {
 	};
 }
 
-async function startLanguageServer(context: vscode.ExtensionContext, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder, language_server: string) {
+async function startLanguageServer(context: vscode.ExtensionContext, project: ProjectDetails, language_server: string) {
 	const serverOptions: ServerOptions = {
 		command: language_server,
 		args: ['--lsp'],
 		transport: TransportKind.stdio,
 		options: {
-			cwd: project_root.fsPath,
+			cwd: project.uri.fsPath,
 		}
 	};
 
@@ -141,9 +148,9 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 		serverOptions.args.push("--capture", capture);
 	}
 
-	const name: string = `Alan LS ${path.relative(workspace_folder.uri.fsPath, project_root.fsPath)}`;
+	const name: string = `Alan LS ${path.relative(project.workspace.uri.fsPath, project.uri.fsPath)}`;
 	const clientOptions: LanguageClientOptions = {
-		documentSelector: [getDocumentFilterForPath(project_root)],
+		documentSelector: [getDocumentFilterForPath(project.uri)],
 		errorHandler: {
 			error: (error, message, count) => {
 				return {
@@ -162,56 +169,47 @@ async function startLanguageServer(context: vscode.ExtensionContext, project_roo
 			supportHtml: true
 		},
 		workspaceFolder: {
-			uri: project_root,
-			name: `${path.relative(workspace_folder.uri.fsPath, project_root.fsPath)}`,
-			index: workspace_folder.index
+			uri: project.uri,
+			name: `${path.relative(project.workspace.uri.fsPath, project.uri.fsPath)}`,
+			index: project.workspace.index
 		},
 		diagnosticCollectionName: name,
 		outputChannelName: name,
 		initializationFailedHandler: (error) => {
-			vscode.window.showErrorMessage(`Failed to start Alan Language Server for ${project_root.fsPath}: ${error}`);
-			useLegacyImpl(context, project_root);
+			vscode.window.showErrorMessage(`Failed to start Alan Language Server for ${project.uri.fsPath}: ${error}`);
+			useLegacyImpl(context, project);
 			return false;
 		}
 	};
 
 	const client = new LanguageClient(name, serverOptions, clientOptions);
-	clients.set(project_root.fsPath, client);
+	clients.set(project.uri.fsPath, client);
 	await client.start();
 	return client.state != State.Stopped;
 }
 
-/*
-TODO:
-- watch for creation of 'tool' file
-- if server stops because of missing files, restart when created? or server should watch itself...
-*/
-
-async function startTool(context: vscode.ExtensionContext, conf: string, project_root: vscode.Uri, workspace_folder: vscode.WorkspaceFolder) {
+async function startTool(context: vscode.ExtensionContext, conf: string, project: ProjectDetails) {
 	let tool_conf: string = vscode.workspace.getConfiguration('alan-definitions').get(conf);
 	if (process.platform === 'win32')
 		tool_conf += `.exe`;
 
-	const tool: string = path.resolve(project_root.fsPath, tool_conf);
+	const tool: string = path.resolve(project.uri.fsPath, tool_conf);
 
-	try {
-		fs.accessSync(tool, fs.constants.X_OK);
-		startLanguageServer(context, project_root, workspace_folder, tool);
-		return true;
-	} catch {
-		return false;
-	}
+	fs.accessSync(tool, fs.constants.X_OK);
+	await startLanguageServer(context, project, tool);
 }
 
-async function useLegacyImpl(context: vscode.ExtensionContext, path: vscode.Uri) {
+async function useLegacyImpl(context: vscode.ExtensionContext, project: ProjectDetails) {
 	if (vscode.workspace.getConfiguration('alan-definitions').get<boolean>('integrateWithGoToDefinition')) {
-		context.subscriptions.push(vscode.languages.registerDefinitionProvider(getDocumentFilterForPath(path), {
+		project.subscriptions.push(vscode.languages.registerDefinitionProvider(getDocumentFilterForPath(project.uri), {
 			provideDefinition: fuzzyDefinitionSearch
 		}));
 	}
-	context.subscriptions.push(
+	project.subscriptions.push(
 		vscode.commands.registerTextEditorCommand('alan.editor.showDefinitions', showDefinitions),
-		vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(path), new AlanSymbolProvider()));
+		vscode.languages.registerDocumentSymbolProvider(getDocumentFilterForPath(project.uri), new AlanSymbolProvider()));
+
+	context.subscriptions.push(...project.subscriptions);
 }
 
 function identifierCompletionItemProvider() {
@@ -256,6 +254,22 @@ export function deactivate(): Thenable<void> | undefined {
 	}
 	return Promise.all(promises).then(() => undefined);
 }
+
+async function provideLanguageSupport(context, type: LSPContextType, project: ProjectDetails) {
+	/* If earlier we could not start the language server tool,
+	** we are using the legacy implementation.
+	** dispose of the existing subscriptions. */
+	for (const sub of project.subscriptions) {
+		sub.dispose();
+	}
+
+	try {
+		await startTool(context, type, project);
+	} catch (e) {
+		useLegacyImpl(context, project);
+	}
+}
+
 export async function activate(context: vscode.ExtensionContext) {
 	const diagnostic_collection = vscode.languages.createDiagnosticCollection();
 	const output_channel = vscode.window.createOutputChannel('Alan');
@@ -263,18 +277,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	const auto_bootstrap: boolean = vscode.workspace.getConfiguration('alan-definitions').get('alan-auto-bootstrap');
 	const auto_fetch: boolean = vscode.workspace.getConfiguration('alan-definitions').get('fabric-auto-fetch');
 
-	interface ProjectDetails {
-		uri: vscode.Uri;
-		workspace: vscode.WorkspaceFolder;
-	};
+
 	let projects: {
-		alan: ProjectDetails[] /* project.json contexts */
-		alan_build: ProjectDetails[] /* build.alan contexts */
-		fabric: ProjectDetails[] /* versions.json contexts */
+		project_json: { [key: string]: ProjectDetails } /* project.json contexts */
+		build_alan: { [key: string]: ProjectDetails } /* build.alan contexts */
+		versions_json: { [key: string]: ProjectDetails } /* versions.json contexts */
 	} = {
-		alan: [],
-		alan_build: [],
-		fabric: []
+		project_json: {},
+		build_alan: {},
+		versions_json: {}
 	};
 
 	for (const workspace of vscode.workspace.workspaceFolders) {
@@ -285,55 +296,52 @@ export async function activate(context: vscode.ExtensionContext) {
 				walk(inode);
 			} else {
 				if (fname === "project.json") {
-					projects.alan.push({
+					projects.project_json[dir] = {
 						uri: vscode.Uri.file(dir),
-						workspace: workspace
-					});
+						workspace: workspace,
+						subscriptions: []
+					};
 				}
 				else if (fname === "build.alan") {
-					projects.alan_build.push({
+					projects.build_alan[dir] = {
 						uri: vscode.Uri.file(dir),
-						workspace: workspace
-					});
+						workspace: workspace,
+						subscriptions: []
+					};
 				}
 				else if (fname === "versions.json") {
-					projects.fabric.push({
+					projects.versions_json[dir] = {
 						uri: vscode.Uri.file(dir),
-						workspace: workspace
-					});
+						workspace: workspace,
+						subscriptions: []
+					};
 				}
 			}
 		});
 		walk(workspace.uri.fsPath);
 	}
 
-	for (const proj of projects.alan) {
+	for (const [key, proj] of Object.entries(projects.project_json)) {
 		try {
 			const path_deps = path.join(proj.uri.fsPath, "dependencies");
 			if (!fs.existsSync(path_deps) && auto_bootstrap) {
 				await tasks.fetchDev(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}
-		} catch {
-		}
+		} catch {}
 	}
 
-	for (const proj of projects.alan_build) {
-		try {
-			startTool(context, LSPContextType.alan, proj.uri, proj.workspace);
-		} catch {
-			useLegacyImpl(context, proj.uri);
-		}
+	for (const [key, proj] of Object.entries(projects.build_alan)) {
+		provideLanguageSupport(context, LSPContextType.alan, proj);
 	}
 
-	for (const proj of projects.fabric) {
+	for (const [key, proj] of Object.entries(projects.versions_json)) {
 		try {
 			const path_deps = path.join(proj.uri.fsPath, ".alan");
 			if (!fs.existsSync(path_deps) && auto_fetch) {
 				await tasks.fetch(proj.uri.fsPath, output_channel, diagnostic_collection);
 			}
-			startTool(context, LSPContextType.fabric, proj.uri, proj.workspace);
-		} catch {
-			useLegacyImpl(context, proj.uri);
+		} finally {
+			provideLanguageSupport(context, LSPContextType.fabric, proj);
 		}
 	}
 
@@ -345,6 +353,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 	const alan_resolve_err = "Unable to resolve `alan` script.";
+	const versionsjson_resolve_err = "Unable to resolve `versions.json` indicating the project root.";
 	const projectjson_resolve_err = "Unable to resolve `project.json` indicating the project root.";
 	let glob_script_args = {
 		cmd: ""
@@ -402,10 +411,36 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('alan.tasks.fetch', async (taskctx) => {
 			try {
-				let alan_root = await resolveContextRoot(taskctx, 'alan');
-				tasks.fetch(alan_root, output_channel, diagnostic_collection);
+				let project_root = await resolveContextRoot(taskctx, 'versions.json');
+				const project_uri = vscode.Uri.file(project_root);
+
+				/* check if it is a new or a known versions.json */
+				if (projects.versions_json[project_root] === undefined) {
+					/* register new project */
+					projects.versions_json[project_root] = {
+						uri: project_uri,
+						workspace: vscode.workspace.getWorkspaceFolder(project_uri),
+						subscriptions: []
+					};
+				}
+
+				/* stop language client if it was running */
+				let client = clients.get(project_root);
+				if (client !== undefined)
+					await client.stop();
+
+				/* fetch */
+				await tasks.fetch(project_root, output_channel, diagnostic_collection);
+
+				if (client === undefined) {
+					/* no language client was running: attempt to start it now */
+					provideLanguageSupport(context, LSPContextType.fabric, projects.versions_json[project_root]);
+				} else {
+					/* restart the existing language client */
+					client.start();
+				}
 			} catch {
-				let error = `Fetch command failed. ${alan_resolve_err}`;
+				let error = `Fetch command failed. ${versionsjson_resolve_err}`;
 				vscode.window.showErrorMessage(error);
 			}
 		}),
@@ -426,8 +461,25 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('alan.meta.tasks.fetch', async (taskctx) => {
 			try {
-				let alan_context = await resolveContext(taskctx, 'project.json');
-				tasks.fetchDev(await alan_context.root, output_channel, clients.has(await alan_context.root) ? undefined : diagnostic_collection);
+				let project_root = await resolveContextRoot(taskctx, 'project.json');
+				const project_uri = vscode.Uri.file(project_root);
+
+				/* check if it is a new or a known versions.json */
+				let project_reg = projects.project_json[project_root];
+				if (projects.project_json[project_root] === undefined) {
+					/* register new project */
+					projects.project_json[project_root] = {
+						uri: project_uri,
+						workspace: vscode.workspace.getWorkspaceFolder(project_uri),
+						subscriptions: []
+					};
+				}
+
+				/* fetch */
+				await tasks.fetchDev(await project_root, output_channel, diagnostic_collection);
+
+				/* just restart all language servers */
+				restartAllLanguageServers(clients);
 			} catch {
 				let error = `Fetch command failed. ${projectjson_resolve_err}`;
 				vscode.window.showErrorMessage(error);
@@ -454,17 +506,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.tasks.registerTaskProvider('alan', {
 			provideTasks: async function () {
 				try {
-					const mixed_mode = projects.alan.length > 0 && projects.fabric.length > 0;
+					const mixed_mode = Object.keys(projects.project_json).length > 0 && Object.keys(projects.versions_json).length > 0;
 					if (mixed_mode) {
 						return Promise.all([
 							tasks.getTasksList(is_alan_deploy_supported, is_alan_appurl_provided),
 							tasks.getTasksListDev(" (meta)")
 						]).then((arr) => arr.flat());
 					}
-					else if (projects.fabric.length > 0) {
+					else if (Object.keys(projects.versions_json).length > 0) {
 						return tasks.getTasksList(is_alan_deploy_supported, is_alan_appurl_provided);
 					}
-					else if (projects.alan.length > 0) {
+					else if (Object.keys(projects.project_json).length > 0) {
 						return tasks.getTasksListDev("");
 					}
 					else {
