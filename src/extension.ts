@@ -426,19 +426,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
 				/* stop language client if it was running */
 				let client = clients.get(project_root);
-				if (client !== undefined)
+				if (client !== undefined) {
 					await client.stop();
+					clients.delete(project_root);
+				}
 
 				/* fetch */
 				await tasks.fetch(project_root, output_channel, diagnostic_collection);
 
-				if (client === undefined) {
-					/* no language client was running: attempt to start it now */
-					provideLanguageSupport(context, LSPContextType.fabric, projects.versions_json[project_root]);
-				} else {
-					/* restart the existing language client */
-					client.start();
-				}
+				/* provide language support for the project */
+				provideLanguageSupport(context, LSPContextType.fabric, projects.versions_json[project_root]);
 			} catch {
 				let error = `Fetch command failed. ${versionsjson_resolve_err}`;
 				vscode.window.showErrorMessage(error);
