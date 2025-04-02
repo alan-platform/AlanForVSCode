@@ -22,6 +22,7 @@ jobs:
     - name: publish
       run: |
         npx vsce publish -p $VSCE_TOKEN --packagePath *.vsix
+        npx ovsx publish *.vsix -p $OVSX_TOKEN
       env:
         VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
     - name: Set VERSION & VERSION_TAG
