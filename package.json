@@ -305,6 +305,7 @@
         "@types/node": "^16.11.43",
         "@types/vscode": "^1.62.0",
         "@vscode/vsce": "^3.2.2",
+        "ovsx": "^0.9.4",
         "ts-loader": "^9.4.2",
         "typescript": "^5.0.4",
         "webpack": "^5.83.1",
