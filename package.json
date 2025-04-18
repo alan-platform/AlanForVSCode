@@ -14,7 +14,7 @@
         "url": "https://github.com/alan-platform/AlanForVSCode.git"
     },
     "engines": {
-        "vscode": "^1.62.0"
+        "vscode": "^1.74.0"
     },
     "categories": [
         "Programming Languages"
@@ -303,7 +303,7 @@
     },
     "devDependencies": {
         "@types/node": "^16.11.43",
-        "@types/vscode": "^1.62.0",
+        "@types/vscode": "^1.74.0",
         "@vscode/vsce": "^3.2.2",
         "ts-loader": "^9.4.2",
         "typescript": "^5.0.4",
@@ -312,6 +312,6 @@
     },
     "dependencies": {
         "sanitize-filename": "^1.6.1",
-        "vscode-languageclient": "^9.0.1"
+        "vscode-languageclient": "8.1.0"
     }
 }
