@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.11
+- fix error messages about the language client not running
+
 ## 1.0.10
 - restart language client(s) and server(s) on fetch
 

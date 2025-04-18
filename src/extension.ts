@@ -250,7 +250,7 @@ export function deactivate(): Thenable<void> | undefined {
 
 	const promises: Thenable<void>[] = [];
 	for (const client of clients.values()) {
-		promises.push(client.stop());
+		promises.push(client.dispose());
 	}
 	return Promise.all(promises).then(() => undefined);
 }
@@ -428,6 +428,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				let client = clients.get(project_root);
 				if (client !== undefined) {
 					await client.stop();
+					await client.dispose();
 					clients.delete(project_root);
 				}
 
