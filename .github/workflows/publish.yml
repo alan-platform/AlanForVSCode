@@ -22,9 +22,10 @@ jobs:
     - name: publish
       run: |
         npx vsce publish -p $VSCE_TOKEN --packagePath *.vsix
-        npx ovsx publish *.vsix -p $OVSX_TOKEN
+        npx ovsx publish -p $OVSX_TOKEN --packagePath *.vsix
       env:
         VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
     - name: Set VERSION & VERSION_TAG
       run: |
         VERSION=$(jq -j '.version' < ./package.json)
