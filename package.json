@@ -252,7 +252,7 @@
             {
                 "language": "alan",
                 "scopeName": "source.alan",
-                "path": "./syntaxes/alan.tmLanguage"
+                "path": "./syntaxes/alan.tmLanguage.json"
             }
         ],
         "viewsContainers": {},

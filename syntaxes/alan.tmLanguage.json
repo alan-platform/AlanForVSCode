@@ -1,0 +1,179 @@
+{
+	"comment": "Alan",
+	"fileTypes": [
+		"alan",
+		"control",
+		"grammar",
+		"schema"
+	],
+	"name": "Alan",
+	"patterns": [
+		{
+			"include": "#comment-block"
+		},
+		{
+			"include": "#comment-line"
+		},
+		{
+			"include": "#string-double"
+		},
+		{
+			"include": "#string-single"
+		},
+		{
+			"name": "invalid",
+			"match": "\\bFIXME\\b"
+		},
+		{
+			"name": "meta.brace.square punctuation.definition.array.begin.alan",
+			"match": "(?:\\s|^)(\\[)(?=\\s|//)"
+		},
+		{
+			"name": "meta.brace.square punctuation.definition.array.end.alan",
+			"match": "(?:\\s|^)(\\])(?=\\s|//)"
+		},
+		{
+			"name": "meta.brace.curly punctuation.definition.parameters.begin.alan",
+			"match": "(?:\\s|^)(\\{{)(?=\\s|//)"
+		},
+		{
+			"match": "(?:\\s|^)(\\}})(?=\\s|//)",
+			"name": "meta.brace.curly punctuation.definition.array.end.alan"
+		},
+		{
+			"match": "(?:\\s|^)(\\{)(?=\\s|//)",
+			"name": "meta.brace.curly punctuation.definition.parameters.begin.alan"
+		},
+		{
+			"match": "(?:\\s|^)(\\})(?=\\s|//)",
+			"name": "meta.brace.curly punctuation.definition.array.end.alan"
+		},
+		{
+			"name": "meta.brace.round punctuation.definition.parameters.begin.alan",
+			"match": "(?:\\s|^)(\\(|\\~\\(|\\.\\(|\\.\\^\\(|\\>\\(|\\+\\(|\\:\\(|\\%\\^\\(|\\%\\(|\\+\\^\\(|\\?\\^\\(|\\}\\()(?=\\s|//)"
+		},
+		{
+			"name": "meta.brace.round punctuation.definition.parameters.end.alan",
+			"match": "(?:\\s|^)(\\))(?=\\s|//)"
+		},
+		{
+			"match": "\\b([0-9]+)\\b",
+			"name": "constant.numeric.alan"
+		},
+		{
+			"match": "\\bMonday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\\b",
+			"name": "constant.language.alan"
+		},
+		{
+			"match": "\\bwarning|teal|success|red|purple|orange|link|green|foreground|error|brand|blue|background|accent\\b",
+			"name": "constant.other.alan"
+		},
+		{
+			"match": "\\buser\\b",
+			"name": "constant.other.alan"
+		},
+		{
+			"name": "keyword.operator.comparison.alan",
+			"match": "(?:\\s|^)(<=|=|>=|==|<>|=>|->|~>|&&)(?=\\s|//)"
+		},
+		{
+			"name": "punctuation.separator.key-value.alan",
+			"match": "(?:\\s|^)(::|:|=>|->|~>|<-|<~)(?=\\s|//)"
+		},
+		{
+			"name": "storage.alan",
+			"match": "^\\s*(windows|webservers|view|users|systems|system instances|settings|servers|root view|root|roles mapping|roles|reporting|query|providing connections|phrases|permissions|numerical-types|languages|keywords|interfaces|interface|imported-interfaces|external systems|duplication mapping|component-types|component-rules)(?=\\s|:|//)"
+		},
+		{
+			"name": "keyword.operator.math.alan",
+			"match": "(?:\\s|^)(10\\^|%d|union|trim|sumlist|sum|subtract|stringify|set|product|prepend-branch|min|max|join|is|inverse|increment|fraction|flatten|division|count|concat|append-branch|add)(?=\\s|//)"
+		},
+		{
+			"include": "#steps"
+		},
+		{
+			"include": "#entity"
+		},
+		{
+			"include": "#support"
+		}
+	],
+	"repository": {
+		"comment-block": {
+			"begin": "/\\*",
+			"captures": {
+				"0": {
+					"name": "punctuation.definition.comment.alan"
+				}
+			},
+			"end": "\\*/",
+			"name": "comment.block.alan"
+		},
+		"comment-line": {
+			"begin": "//",
+			"captures": {
+				"0": {
+					"name": "punctuation.definition.comment.alan"
+				}
+			},
+			"end": "$\\n?",
+			"name": "comment.line.double-slash.alan"
+		},
+		"entity": {
+			"match": "(zero|yes|writer|writable|workfor|without|with|windows|window|widget|widening|where|when|Wednesday|webservers|webserver|wallpaper|walk|visible|views|view|verified|variant-switch|value|UTC|using|users|user|usage-propagate|usage|url|updater|update|unsubscribe|unique|union|unexpected|unconstrained|UID|uid|types|type|type|Tuesday|true|trim|token|todo-for|today|to|timezone|timer|time|Thursday|then|templates|tags|tag|tables|table|systems|system|switchable|switch|supported|Sunday|sumlist|sum|successor|success|subtract|substring|subscription|subscribe|style|stringify|strategy|struct-switch|str|store|stopwatch|sticky|std|static|state|state|startswith|start|sparse|space|sort|some|socket|small|single|sign-switch|sibling|show|shared|setto|settings|set|servers|separator|separate|selection|selection|selected|select|section|seconds|schema_name|schedule|scaling|Saturday|root|roles|role|resolvable|reset|requires|request|reports|reporting|report|rename|remove|remainder|reload|relative|regexp|refresh|referencer|record|reader|read|raw|rate|query|providing|provides|provide|protocol|property|project|product|primary|prevention|predecessor|preceding|power|positive|port|placeholder|phrases|permissions|pcsc|path|password-status|password|parameters|parameter|panic|overview|outputs|out|ordered|order|or|operator|open|ontimeout|one|on|of|numerical|nullable|now|not|none|non-empty|nodes|node|no|new|never|negative|namespace|name|mutation|multi-line|Monday|models|model|minutes|min|migration|metadata|merge|max|match|markup|mapping|map|log|loader|load|list|linker|linked|link|limit|lifetime|length|languages/|languages|language|lambda|label|keys|keyboard|key|key|JOIN|item-permissions|invoke|invocation|invalidate|interval|internal|interfaces|interface|interactive|instruction|instances|instance|inputs|input|inlined|inline|initialize|initialization|initial|inferred|index|indent|increment|include|in|implicit|implementation|implement|ignore|if|identifying|id|icon|hours|hour|hidden|hash|has-todo|handheld|hack|guid|graph|from|Friday|frames|frame|forward|foreign|floor|float|flatten|flags|FIXME|first|fingerprint|find|filter|filename|file_prefix|file_name_parameters|file_name_arguments|fields|fast|false|failure|factor|external|extension|exposes|expose|experimental|exit|EXISTS|execute|every|event|escape|errors|error|equals|equal|enum|entry|entity|ensure|enriched|enrich|engine|enabled|empty|email|else|dynamic-order|dynamic|duration|duration|duplicate|dormant|downstream|do|division|dist|disabled|diff|devenv|desired|description|descending|desc|derived|deprecated|deployments|denseness|dense|delete|defines|default|decimal|day|datetime|date|database|custom|current|creator|creation|created|create|count|copy|convert|control|context|content|contains|consumes|consume|constrain|connections|connection|configuration|compiler|columns|clicks|checkpoint|ceil|causal|cast|candidate|can-update|can-read|can-delete|can-create|buckets|breakout|break|brand|branch|boolean|block|blinking|binds|binding|bidirectional|base|autoincrement|ATR|at|ascending|as|apply|application|any|anonymous|announcement|and|anchor|allow|aggregate|administrator|add|acyclic|active|accidental|$package|$deployed)",
+			"name": "entity.name.function.alan"
+		},
+		"support": {
+			"match": "(?:\\s|^)(variant|text|stategroup|sparsematrix|reference-set|reference|primitive|plural|number|natural|matrix|libraries|integer|group|file|dictionary|densematrix|component|command|compound|combinator|collection|alan|action)(?=\\s|//|:)",
+			"name": "entity.name.type"
+		},
+		"steps": {
+			"name": "variable.parameter.alan",
+			"match": "(~>|~|=>|\\$\\^|\\$|\\||\\+\\^|\\+|\\^|\\`|\\%\\^|\\%\\}|\\%|\\#|\\<\\<|\\<|\\>\\>|\\>|\\&\\^|\\&\\&|\\&|\\/|\\*\\&\\#|\\*\\&|\\*\\*|\\*|\\@\\%\\^|\\@\\?\\^|\\@|\\.\\^|\\.\\>|\\.\\}|\\.\\.\\.|\\.|\\?\\||\\?\\^|\\?\\?\\^|\\?|\\!|\\,|\\-\\-|\\-|!\\&|->)"
+		},
+		"string-double": {
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.css"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.css"
+				}
+			},
+			"name": "keyword.control",
+			"patterns": [
+				{
+					"match": "\\\\.",
+					"name": "constant.character.escape.css"
+				}
+			]
+		},
+		"string-single": {
+			"begin": "'",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.css"
+				}
+			},
+			"end": "'",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.css"
+				}
+			},
+			"name": "string.quoted.single.css",
+			"patterns": [
+				{
+					"match": "\\\\.",
+					"name": "constant.character.escape.css"
+				}
+			]
+		}
+	},
+	"scopeName": "source.alan",
+	"uuid": "bf9140d0-007b-4b3f-98f2-c2978741f57e"
+}
