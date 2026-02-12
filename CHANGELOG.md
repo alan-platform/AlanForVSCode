@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.12
+- JSON tmLanguage
+- improved wordPattern for go to definition on $ and better non-LSP matching for identifiers and strings
+
 ## 1.0.11
 - fix error messages about the language client not running
 
