@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.0.13
+- fix identifier completion (duplicate single quotes)
+- provide completion for all typical identifiers in Alan languages
+- completion performance improvements
+
 ## 1.0.12
 - JSON tmLanguage
 - improved wordPattern for go to definition on $ and better non-LSP matching for identifiers and strings
