@@ -221,15 +221,12 @@ function identifierCompletionItemProvider() {
 			if (!wrange)
 				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
 
-			let result = new Set<string>;
-			const re = /'[^']*'(?=:|\s*->|\s*~>)/g;
-			for (let i = 0; i < document.lineCount; ++i) {
-				const line = document.lineAt(i).text;
-				let match;
-				while ((match = re.exec(line)) !== null) {
-					result.add(match[0]);
-				}
-				re.lastIndex = 0; // reset for next line
+			const result = new Set<string>();
+			const text = document.getText();
+			const re = /'[^'\r\n]*'(?=:|\s*->|\s*~>)/g;
+			let match;
+			while ((match = re.exec(text)) !== null) {
+				result.add(match[0]);
 			}
 
 			return Array.from(result.values()).map(id => {
