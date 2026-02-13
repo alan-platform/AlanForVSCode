@@ -219,25 +219,30 @@ function identifierCompletionItemProvider() {
 		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
 			const wrange = document.getWordRangeAtPosition(position, /(?:(?<=^(?:[^']*'[^']*')*[^']*))'[^'\\r\\n]*'/);
 			if (!wrange)
-				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
+				return undefined; // fall back to built-in wordenize; OPT: combine results below with wordenize results
 
 			const result = new Set<string>();
 			const text = document.getText();
-			const re = /'[^'\r\n]*'(?=:|\s*->|\s*~>)/g;
+			const re = /'[^'\r\n]*'(?=:| ?->| ?~>)/g;
 			let match;
 			while ((match = re.exec(text)) !== null) {
+				// Check for cancellation periodically
+				if (token.isCancellationRequested) {
+					return undefined;
+				}
 				result.add(match[0]);
 			}
 
-			const items: vscode.CompletionItem[] = [];
+			// pre-allocate array with known size
+			const items: vscode.CompletionItem[] = new Array(result.size);
+			let i = 0;
 			for (const id of result) {
-				items.push({
+				items[i++] = {
 					label: id,
-					filterText: id,
-					sortText: `~${id}`, /* push to end of list; language server suggestions should come first */
 					insertText: id,
+					sortText: `~${id}`, /* push to end of list; language server suggestions should come first */
 					kind: vscode.CompletionItemKind.Text,
-				});
+				};
 			}
 			return items;
 		}
