@@ -217,12 +217,12 @@ function identifierCompletionItemProvider() {
 		language: 'alan'
 	}, {
 		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-			const wrange = document.getWordRangeAtPosition(position, /'[^']*'/);
+			const wrange = document.getWordRangeAtPosition(position, /(?:(?<=^(?:[^']*'[^']*')*[^']*))'[^'\\r\\n]*'/);
 			if (!wrange)
 				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
 
 			let result = new Set<string>;
-			var re = /^(?:\s*)('[^']*')/;
+			var re = /(?:(?<=^(?:[^']*'[^']*')*[^']*))('[^']*')(?=:|\s*->|\s*~>)/;
 			for (let i = 0; i < document.lineCount; ++i) {
 				const line: vscode.TextLine = document.lineAt(i);
 				var matches = line.text.match(re);
