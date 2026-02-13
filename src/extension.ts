@@ -222,13 +222,14 @@ function identifierCompletionItemProvider() {
 				return undefined; //fall back to built-in wordenize; OPT: combine results below with wordenize results
 
 			let result = new Set<string>;
-			var re = /(?:(?<=^(?:[^']*'[^']*')*[^']*))('[^']*')(?=:|\s*->|\s*~>)/;
+			const re = /'[^']*'(?=:|\s*->|\s*~>)/g;
 			for (let i = 0; i < document.lineCount; ++i) {
-				const line: vscode.TextLine = document.lineAt(i);
-				var matches = line.text.match(re);
-				if (matches !== null && matches.length === 2) {
-					result.add(matches[1]);
+				const line = document.lineAt(i).text;
+				let match;
+				while ((match = re.exec(line)) !== null) {
+					result.add(match[0]);
 				}
+				re.lastIndex = 0; // reset for next line
 			}
 
 			return Array.from(result.values()).map(id => {
