@@ -229,15 +229,17 @@ function identifierCompletionItemProvider() {
 				result.add(match[0]);
 			}
 
-			return Array.from(result.values()).map(id => {
-				return {
-					"label": id,
-					"filterText": id,
-					"sortText": `~${id}`, /* push to end of list; language server suggestions should come first */
-					"insertText": id,
-					"kind": vscode.CompletionItemKind.Text,
-				}
-			})
+			const items: vscode.CompletionItem[] = [];
+			for (const id of result) {
+				items.push({
+					label: id,
+					filterText: id,
+					sortText: `~${id}`, /* push to end of list; language server suggestions should come first */
+					insertText: id,
+					kind: vscode.CompletionItemKind.Text,
+				});
+			}
+			return items;
 		}
 	}, '.', `'`);
 }
