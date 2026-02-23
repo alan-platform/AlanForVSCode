@@ -213,7 +213,7 @@ async function getMigrationName(shell: string, alan_root: string): Promise<strin
 	return new Promise(async resolve => {
 		const migration_name_raw = await vscode.window.showInputBox({
 			value: 'from_empty',
-			valueSelection: [5,10],
+			valueSelection: [0,10],
 			placeHolder: `For example: <git commit id of 'from' model>`
 		});
 		if (migration_name_raw === undefined)
@@ -225,20 +225,30 @@ async function getMigrationName(shell: string, alan_root: string): Promise<strin
 }
 async function getMigrationModel(shell: string, alan_root: string): Promise<string> {
 	return new Promise(async resolve => {
+		let modelsDir = path.join(alan_root, 'models');
 		let models = [];
 		let model_path:((model:string) => string);
 
-		if (fs.existsSync(path.join(alan_root, 'models'))) { //platform >= 2021.8
-			// NOTE: in order to use models directly, we need to update generate_migration.sh,
-			// which relies on model.link files. Use the following code when we can:
-			// model_path = (model) => `${alan_root}/.alan/devenv/output/objects/models/${model}/package`;
-			// models = fs.readdirSync(path.join(alan_root, 'models'));
+		if (fs.existsSync(modelsDir)) { //platform >= 2021.8
+			let ds_117_or_higher = false;
+			try {
+				const versions = JSON.parse(fs.readFileSync(path.join(alan_root, "versions.json")).toString());
+				const ds_version = parseInt(versions['system types']['datastore']['version'], 10);
+				if (ds_version >= 117 || isNaN(ds_version))
+					ds_117_or_higher = true;
+			}
+			catch {}
 
-			// legacy approach, for now:
-			model_path = (model) => `${alan_root}/systems/${model}`;
-			models = fs.readdirSync(path.join(alan_root, 'systems'))
-				.map(system => path.join(system, 'model.link'))
-				.filter(modellib => fs.existsSync(path.join(alan_root, 'systems', modellib)));
+			if (ds_117_or_higher) { // datastore >= 117
+				model_path = (model) => `${alan_root}/models/${model}`;
+				models = fs.readdirSync(modelsDir);
+			}
+			else { // legacy approach, for now
+				model_path = (model) => `${alan_root}/systems/${model}`;
+				models = fs.readdirSync(path.join(alan_root, 'systems'))
+					.map(system => path.join(system, 'model.link'))
+					.filter(modellib => fs.existsSync(path.join(alan_root, 'systems', modellib)));
+			}
 		} else {  //platform < 2021.8
 			model_path = (model) => `${alan_root}/systems/${model}`;
 			models = fs.readdirSync(path.join(alan_root, 'systems'))
@@ -247,17 +257,17 @@ async function getMigrationModel(shell: string, alan_root: string): Promise<stri
 		}
 
 		if (models.length <= 0) {
-			const error = `Unable to resolve a 'systems/**/model.link' file,`
-				+ ` which is required for generating a migration (or a 'model.lib.link'`
-				+ ` file for platform version < 2021.8). Make sure that you have a`
-				+ ` system to migrate from, and that you have run Alan Build.`
+			const error = `Unable to resolve a 'models/<model>' (platform version >= 2026.1),`
+				+ ` or a 'systems/**/model.link' file (platform version >= 2021.8), or a 'systems/**/model.lib.link' file (platform version < 2021.8)`
+				+ ` Make sure that you have a system to migrate from, and that you have run Alan Build.`;
 			vscode.window.showErrorMessage(error);
 			return;
 		}
 
-		const migration_model = await vscode.window.showQuickPick(models, {
+		let migration_model = models.length === 1 ? models[0] : await vscode.window.showQuickPick(models, {
 			placeHolder: 'migration target model'
 		});
+
 		if (migration_model === undefined)
 			return;
 

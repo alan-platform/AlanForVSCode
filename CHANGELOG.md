@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.14
+- support for generating migrations when using platform version 2026.1 or higher
+
 ## 1.0.13
 - fix identifier completion (duplicate single quotes)
 - provide completion for all typical identifiers in Alan languages
