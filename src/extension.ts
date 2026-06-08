@@ -296,31 +296,36 @@ export async function activate(context: vscode.ExtensionContext) {
 	for (const workspace of vscode.workspace.workspaceFolders) {
 		let walk = (dir: string) => fs.readdirSync(dir).forEach(fname => {
 			const inode = path.resolve(dir, fname);
-			const stat = fs.statSync(inode);
-			if (stat && stat.isDirectory()) {
-				walk(inode);
-			} else {
-				if (fname === "project.json") {
-					projects.project_json[dir] = {
-						uri: vscode.Uri.file(dir),
-						workspace: workspace,
-						subscriptions: []
-					};
+			try {
+				const stat = fs.statSync(inode);
+				if (stat && stat.isDirectory()) {
+					walk(inode);
+				} else {
+					if (fname === "project.json") {
+						projects.project_json[dir] = {
+							uri: vscode.Uri.file(dir),
+							workspace: workspace,
+							subscriptions: []
+						};
+					}
+					else if (fname === "build.alan") {
+						projects.build_alan[dir] = {
+							uri: vscode.Uri.file(dir),
+							workspace: workspace,
+							subscriptions: []
+						};
+					}
+					else if (fname === "versions.json") {
+						projects.versions_json[dir] = {
+							uri: vscode.Uri.file(dir),
+							workspace: workspace,
+							subscriptions: []
+						};
+					}
 				}
-				else if (fname === "build.alan") {
-					projects.build_alan[dir] = {
-						uri: vscode.Uri.file(dir),
-						workspace: workspace,
-						subscriptions: []
-					};
-				}
-				else if (fname === "versions.json") {
-					projects.versions_json[dir] = {
-						uri: vscode.Uri.file(dir),
-						workspace: workspace,
-						subscriptions: []
-					};
-				}
+			}
+			catch (e) {
+				/* ignore errors */
 			}
 		});
 		walk(workspace.uri.fsPath);
