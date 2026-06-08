@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.15
+- ignore files when stat fails
+
 ## 1.0.14
 - support for generating migrations when using platform version 2026.1 or higher
 
