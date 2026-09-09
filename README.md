@@ -13,6 +13,16 @@ Provides support for development on the [Alan platform](https://alan-platform.co
 
 ![Screenshot of the Alan extension for Visual Studio Code](./screenshot.png)
 
+## Syntax highlighting
+
+Alan files are coloured by the bundled TextMate grammar.
+Semantic highlighting from the language server is disabled by default.
+To turn it on, add this to your settings:
+
+    "[alan]": {
+        "editor.semanticHighlighting.enabled": true
+    }
+
 ## Tasks
 
 The build and fetch tasks can be started from within a `.alan` file.

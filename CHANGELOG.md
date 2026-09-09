@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.16
+- semantic highlighting is off by default for Alan files; set `"[alan]": { "editor.semanticHighlighting.enabled": true }` to re-enable
+
 ## 1.0.15
 - ignore files when stat fails
 

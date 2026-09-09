@@ -7,7 +7,7 @@
         "color": "#1e1e1e",
         "theme": "dark"
     },
-    "version": "1.0.15",
+    "version": "1.0.16",
     "publisher": "Kjerner",
     "repository": {
         "type": "git",
@@ -229,7 +229,8 @@
                     "other": true,
                     "strings": true
                 },
-                "editor.suggest.insertMode": "replace"
+                "editor.suggest.insertMode": "replace",
+                "editor.semanticHighlighting.enabled": false
             }
         },
         "languages": [
