@@ -305,8 +305,8 @@
     "devDependencies": {
         "@types/node": "^16.11.43",
         "@types/vscode": "^1.74.0",
-        "@vscode/vsce": "^3.2.2",
-        "ovsx": "^0.9.4",
+        "@vscode/vsce": "^3.9.2",
+        "ovsx": "^0.9.5",
         "ts-loader": "^9.4.2",
         "typescript": "^5.0.4",
         "webpack": "^5.83.1",
