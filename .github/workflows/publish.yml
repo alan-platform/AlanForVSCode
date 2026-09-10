@@ -15,16 +15,13 @@ jobs:
       with:
         node-version: '22'
     - run: npm ci
-    - name: tsc
-      run: |
-        npx tsc -p .
-        npx vsce package
-    - name: publish
-      run: |
-        npx vsce publish -p $VSCE_TOKEN --packagePath *.vsix
-        npx ovsx publish -p $OVSX_TOKEN --packagePath *.vsix
+    - run: npx tsc -p .
+    - run: npx vsce package
+    - run: npx vsce publish -p $VSCE_TOKEN --packagePath *.vsix
       env:
         VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+    - run: npx ovsx publish -p $OVSX_TOKEN --packagePath *.vsix
+      env:
         OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
     - name: Set VERSION & VERSION_TAG
       run: |
