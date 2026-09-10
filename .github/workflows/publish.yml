@@ -27,7 +27,7 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - run: npx vsce publish --azure-credential --packagePath *.vsix
+      - run: npx vsce publish --azure-credential --packagePath *.vsix --skip-duplicate
       - run: npx ovsx publish -p $OVSX_TOKEN --packagePath *.vsix
         env:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
