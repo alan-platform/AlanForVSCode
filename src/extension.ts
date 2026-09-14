@@ -455,7 +455,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('alan.tasks.deploy', async (taskctx) => {
 			try {
 				let alan_root = await resolveContextRoot(taskctx, 'deploy.sh');
-				tasks.deploy(alan_root, output_channel, diagnostic_collection);
+				tasks.deploy(alan_root, output_channel, clients.has(alan_root) ? undefined : diagnostic_collection);
 			} catch {
 				let error = 'Deploy command failed. Unable to resolve `deploy.sh` script.';
 				vscode.window.showErrorMessage(error);

@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.17
+- do not push `deploy.sh` errors to the diagnostics collection when a language server is running
+
 ## 1.0.16
 - semantic highlighting is off by default for Alan files; set `"[alan]": { "editor.semanticHighlighting.enabled": true }` to re-enable
 
