@@ -34,13 +34,17 @@ function statusString(state: State): string {
 	}
 }
 
+/* The Alan language servers answer the `shutdown` request only after they finish
+** indexing the project. The library default of 2 seconds is too short for that. */
+export const LANGUAGE_SERVER_STOP_TIMEOUT_MS = 30000;
+
 async function startClient(client: LanguageClient) {
 	// vscode.window.showInformationMessage(`Starting Alan Language Server '${client.name}'`);
 	return client.start();
 }
 async function stopClient(client: LanguageClient) {
 	// vscode.window.showInformationMessage(`Stopping Alan Language Server '${client.name}'`);
-	return client.stop();
+	return client.stop(LANGUAGE_SERVER_STOP_TIMEOUT_MS);
 }
 
 async function performOperation(client, instr) {

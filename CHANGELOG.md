@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.0.18
+- fix `Notify file events failed.` notifications after the Fetch command restarts a language server: dispose the previous file watchers when the server registers a build unit again
+- Fetch command: wait longer for the language server to shut down, report failures for each step separately, and always restart language support afterwards
+
 ## 1.0.17
 - do not push `deploy.sh` errors to the diagnostics collection when a language server is running
 

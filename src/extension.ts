@@ -6,7 +6,7 @@ import * as tasks from './tasks';
 import * as fs from 'fs';
 import { showDefinitions, fuzzyDefinitionSearch } from './search';
 import { AlanSymbolProvider } from './symbols'
-import { manageLanguageServers, restartAllLanguageServers } from './lsp'
+import { manageLanguageServers, restartAllLanguageServers, LANGUAGE_SERVER_STOP_TIMEOUT_MS } from './lsp'
 
 import {
 	CloseAction,
@@ -19,7 +19,10 @@ import {
 	CompletionItemKind,
 	CompletionItem,
 	InsertTextFormat,
-	Disposable
+	Disposable,
+	DynamicFeature,
+	DidChangeWatchedFilesNotification,
+	DidChangeWatchedFilesRegistrationOptions
 } from 'vscode-languageclient/node';
 import { url } from 'inspector';
 
@@ -164,6 +167,19 @@ async function startLanguageServer(context: vscode.ExtensionContext, project: Pr
 			}
 		},
 		progressOnInitialization: true,
+		middleware: {
+			workspace: {
+				didChangeWatchedFile: async (event, next) => {
+					/* Only a running client can forward file events. A watcher that
+					** fires for a stopped client would otherwise surface as a
+					** 'Notify file events failed.' notification. */
+					if (client.state !== State.Running) {
+						return;
+					}
+					return next(event);
+				}
+			}
+		},
 		markdown: {
 			isTrusted: true,
 			supportHtml: true
@@ -183,9 +199,61 @@ async function startLanguageServer(context: vscode.ExtensionContext, project: Pr
 	};
 
 	const client = new LanguageClient(name, serverOptions, clientOptions);
+	disposeStaleWatchersOnReRegistration(client);
 	clients.set(project.uri.fsPath, client);
 	await client.start();
 	return client.state != State.Stopped;
+}
+
+/* The Alan language servers register `workspace/didChangeWatchedFiles` watchers per
+** build unit. When a unit is indexed again, they register the same id again without
+** unregistering it first. The client library then overwrites its bookkeeping for that
+** id and leaks the previous watchers. Leaked watchers stay bound to the client after it
+** has stopped, and every change to a watched file then produces a
+** 'Notify file events failed.' notification.
+** Dispose the previous registration before accepting the new one. */
+function disposeStaleWatchersOnReRegistration(client: LanguageClient) {
+	type WatcherFeature = DynamicFeature<DidChangeWatchedFilesRegistrationOptions>;
+	const getFeature = client.getFeature as unknown as (method: string) => WatcherFeature | undefined;
+	const feature = getFeature.call(client, DidChangeWatchedFilesNotification.method);
+	if (feature === undefined) {
+		return;
+	}
+	const register = feature.register.bind(feature);
+	feature.register = (data) => {
+		feature.unregister(data.id);
+		register(data);
+	};
+}
+
+/* Stop and dispose the language client for a project root, if there is one.
+** Failures are logged; they must not prevent the caller from continuing. */
+async function stopLanguageServer(project_root: string, output_channel: vscode.OutputChannel) {
+	const client = clients.get(project_root);
+	if (client === undefined) {
+		return;
+	}
+	clients.delete(project_root);
+
+	if (client.state === State.Starting) {
+		/* a client can only be stopped once it is running */
+		try {
+			await client.start();
+		} catch {
+			/* reported by the client itself */
+		}
+	}
+
+	try {
+		await client.stop(LANGUAGE_SERVER_STOP_TIMEOUT_MS);
+	} catch (error) {
+		output_channel.appendLine(`Stopping '${client.name}' failed: ${error}`);
+	}
+	try {
+		await client.dispose();
+	} catch (error) {
+		output_channel.appendLine(`Disposing '${client.name}' failed: ${error}`);
+	}
 }
 
 async function startTool(context: vscode.ExtensionContext, conf: string, project: ProjectDetails) {
@@ -368,6 +436,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	let glob_script_args = {
 		cmd: ""
 	};
+	const fetch_in_progress = new Set<string>(); /* project roots with a running Fetch command */
 	context.subscriptions.push(
 		vscode.languages.registerCompletionItemProvider({
 			"language": 'alan'
@@ -420,36 +489,49 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 		vscode.commands.registerCommand('alan.tasks.fetch', async (taskctx) => {
+			let project_root: string | undefined;
 			try {
-				let project_root = await resolveContextRoot(taskctx, 'versions.json');
-				const project_uri = vscode.Uri.file(project_root);
+				project_root = await resolveContextRoot(taskctx, 'versions.json');
+			} catch {
+				project_root = undefined;
+			}
+			if (project_root === undefined) {
+				vscode.window.showErrorMessage(`Fetch command failed. ${versionsjson_resolve_err}`);
+				return;
+			}
+			if (fetch_in_progress.has(project_root)) {
+				/* a second run would stop and restart the language server underneath the first one */
+				vscode.window.showInformationMessage('Fetch is already running for this project.');
+				return;
+			}
+			const project_uri = vscode.Uri.file(project_root);
 
-				/* check if it is a new or a known versions.json */
-				if (projects.versions_json[project_root] === undefined) {
-					/* register new project */
-					projects.versions_json[project_root] = {
-						uri: project_uri,
-						workspace: vscode.workspace.getWorkspaceFolder(project_uri),
-						subscriptions: []
-					};
-				}
+			/* check if it is a new or a known versions.json */
+			if (projects.versions_json[project_root] === undefined) {
+				/* register new project */
+				projects.versions_json[project_root] = {
+					uri: project_uri,
+					workspace: vscode.workspace.getWorkspaceFolder(project_uri),
+					subscriptions: []
+				};
+			}
 
+			fetch_in_progress.add(project_root);
+			try {
 				/* stop language client if it was running */
-				let client = clients.get(project_root);
-				if (client !== undefined) {
-					await client.stop();
-					await client.dispose();
-					clients.delete(project_root);
-				}
+				await stopLanguageServer(project_root, output_channel);
 
 				/* fetch */
-				await tasks.fetch(project_root, output_channel, diagnostic_collection);
-
-				/* provide language support for the project */
-				provideLanguageSupport(context, LSPContextType.fabric, projects.versions_json[project_root]);
-			} catch {
-				let error = `Fetch command failed. ${versionsjson_resolve_err}`;
-				vscode.window.showErrorMessage(error);
+				try {
+					await tasks.fetch(project_root, output_channel, diagnostic_collection);
+				} catch {
+					vscode.window.showErrorMessage('Fetch command failed. See the Alan output channel for details.');
+				} finally {
+					/* provide language support for the project */
+					await provideLanguageSupport(context, LSPContextType.fabric, projects.versions_json[project_root]);
+				}
+			} finally {
+				fetch_in_progress.delete(project_root);
 			}
 		}),
 		vscode.commands.registerCommand('alan.tasks.deploy', async (taskctx) => {
